@@ -4,7 +4,7 @@
  */
 
 class APIService {
-  constructor(baseURL = 'http://localhost:5000/api') {
+  constructor(baseURL = 'http://localhost:8000/api') {
     this.baseURL = baseURL;
     this.accessToken = localStorage.getItem('accessToken');
     this.refreshToken = localStorage.getItem('refreshToken');
