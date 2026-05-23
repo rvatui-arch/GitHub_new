@@ -102,24 +102,7 @@ You should see:
 }
 ```
 
-## 🔗 Connect Frontend to Backend
-
-### In your `index.html`:
-
-```html
-<script>
-const API_BASE_URL = 'http://localhost:5000/api';
-
-// Example: Fetch products
-fetch(`${API_BASE_URL}/products`)
-  .then(res => res.json())
-  .then(data => console.log(data));
-</script>
-```
-
-Or use the API service class from `FRONTEND_INTEGRATION.md`.
-
-## 📊 Database Models Explained
+##  Database Models Explained
 
 ### User Collection
 ```javascript
@@ -534,8 +517,9 @@ client.setex(`product:${id}`, 3600, JSON.stringify(product));
 
 - `README.md` - Setup & overview
 - `API_DOCUMENTATION.md` - Complete API reference
-- `FRONTEND_INTEGRATION.md` - Frontend connection guide
-- `DEPLOYMENT.md` - Deployment instructions
+- `FRONTEND_INTEGRATION.md` - Frontend API integration
+- `../FRONTEND_SETUP.md` - Frontend setup & deployment guide
+- `DEPLOYMENT.md` - Backend deployment instructions
 
 ### Community Resources
 
@@ -593,6 +577,6 @@ curl -X POST http://localhost:5000/api/ai/try-on ...
 
 Next steps:
 1. ✅ Setup backend (done)
-2. → Connect frontend (see FRONTEND_INTEGRATION.md)
+2. → Setup frontend (see [../FRONTEND_SETUP.md](../FRONTEND_SETUP.md))
 3. → Deploy to production (see Deployment Checklist)
 4. → Monitor and maintain

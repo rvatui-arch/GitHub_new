@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecondStyle — Curated Secondhand Fashion</title>
+    <!-- API Service -->
+    <script src="js/api.js"></script>
+    <!-- Socket.IO for real-time chat -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- Stripe for payments -->
+    <script src="https://js.stripe.com/v3/"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
@@ -849,6 +855,67 @@
 </div>
 
 <script>
+// ============ BACKEND API CONFIGURATION ============
+// Update these URLs based on your deployment environment
+const API_BASE_URL = 'http://localhost:5000/api';
+const WS_BASE_URL = 'http://localhost:5000';
+
+// Initialize Socket.IO for real-time chat
+let socket = null;
+
+function initializeSocket() {
+  if (!api.isAuthenticated()) return;
+  
+  socket = io(WS_BASE_URL, {
+    auth: {
+      token: localStorage.getItem('accessToken')
+    }
+  });
+
+  socket.on('connect', () => {
+    console.log('Connected to real-time server');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected from real-time server');
+  });
+
+  socket.on('messageReceived', (message) => {
+    console.log('New message received:', message);
+    handleNewMessage(message);
+  });
+
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+  });
+}
+
+// Auto-initialize socket when user logs in
+function handleUserLogin(user) {
+  console.log('User logged in:', user);
+  initializeSocket();
+}
+
+// Handle new incoming messages
+function handleNewMessage(message) {
+  console.log('Handling new message:', message);
+  // Implement your message handler logic here
+}
+
+// ============ STRIPE CONFIGURATION ============
+let stripe = null;
+let elements = null;
+
+function initializeStripe(publicKey) {
+  if (!publicKey) {
+    console.warn('Stripe public key not configured');
+    return;
+  }
+  
+  stripe = Stripe(publicKey);
+  elements = stripe.elements();
+}
+
 // ── SELLER ACCOUNTS ──
 const SELLER_ACCOUNTS = {
     'alice':  'alice123',
@@ -930,20 +997,64 @@ function getItemImg(item) {
 }
 
 // ── ITEMS DATA ──
-let items = [
-    {id:1,  title:"Vintage Levi's 501 Jeans",    brand:"Levi's",        category:"pants",       size:"M",        condition:"good",     price:45,  gender:"unisex", aiScore:92, tags:["vintage","denim"],   seller:'alice', color:'blue'},
-    {id:2,  title:"Zara White Blouse",            brand:"Zara",          category:"shirt",       size:"S",        condition:"like-new", price:25,  gender:"women",  aiScore:88, tags:["office","white"],    seller:'bob',   color:'white'},
-    {id:3,  title:"H&M Floral Summer Dress",      brand:"H&M",           category:"dress",       size:"M",        condition:"good",     price:20,  gender:"women",  aiScore:85, tags:["summer","floral"],   seller:'carla', color:'multicolor'},
-    {id:4,  title:"Nike Black Windbreaker",        brand:"Nike",          category:"jacket",      size:"L",        condition:"like-new", price:50,  gender:"unisex", aiScore:90, tags:["sports","black"],    seller:'dan',   color:'black'},
-    {id:5,  title:"Adidas White Sneakers",         brand:"Adidas",        category:"shoes",       size:"42",       condition:"good",     price:40,  gender:"unisex", aiScore:87, tags:["casual","white"],    seller:'erin',  color:'white'},
-    {id:6,  title:"Mango Leather Jacket",          brand:"Mango",         category:"jacket",      size:"M",        condition:"like-new", price:85,  gender:"women",  aiScore:94, tags:["leather","brown"],   seller:'frank', color:'brown'},
-    {id:7,  title:"Uniqlo White T-Shirt",          brand:"Uniqlo",        category:"shirt",       size:"L",        condition:"new",      price:12,  gender:"unisex", aiScore:82, tags:["basics","white"],    seller:'gina',  color:'white'},
-    {id:8,  title:"Vintage Gucci Belt",            brand:"Gucci",         category:"accessories", size:"One Size", condition:"good",     price:180, gender:"unisex", aiScore:96, tags:["luxury","black"],    seller:'harry', color:'black'},
-    {id:9,  title:"Calvin Klein Blue Shirt",       brand:"Calvin Klein",  category:"shirt",       size:"M",        condition:"like-new", price:35,  gender:"men",    aiScore:89, tags:["office","blue"],     seller:'alice', color:'blue'},
-    {id:10, title:"Gap Straight Jeans",            brand:"Gap",           category:"pants",       size:"32",       condition:"good",     price:25,  gender:"men",    aiScore:84, tags:["denim","blue"],      seller:'bob',   color:'blue'},
-    {id:11, title:"Forever 21 Mini Skirt",         brand:"Forever 21",    category:"dress",       size:"S",        condition:"good",     price:10,  gender:"women",  aiScore:79, tags:["casual","black"],    seller:'carla', color:'black'},
-    {id:12, title:"Puma Red Sneakers",             brand:"Puma",          category:"shoes",       size:"39",       condition:"like-new", price:45,  gender:"women",  aiScore:86, tags:["sports","red"],      seller:'dan',   color:'red'}
-];
+let items = [];
+
+/**
+ * Load products from backend API
+ */
+async function loadProductsFromBackend() {
+    try {
+        console.log('Loading products from backend...');
+        const response = await api.getProducts();
+        
+        if (response.success && response.data) {
+            items = response.data.map(product => ({
+                id: product._id,
+                title: product.title,
+                brand: product.seller?.shopName || 'Unknown',
+                category: product.category,
+                size: product.size || 'One Size',
+                condition: product.condition || 'good',
+                price: product.price,
+                gender: product.gender || 'unisex',
+                aiScore: product.averageRating ? Math.round(product.averageRating * 10) : 80,
+                tags: product.tags || [],
+                seller: product.seller?._id || product.seller,
+                color: product.color || 'unknown',
+                images: product.images || [],
+                sold: product.status === 'sold',
+                reserved: product.status === 'reserved'
+            }));
+            
+            console.log(`Loaded ${items.length} products from backend`);
+            return true;
+        }
+    } catch (error) {
+        console.warn('Could not load from backend, using local data:', error);
+        // Fallback will happen after this
+    }
+    return false;
+}
+
+/**
+ * Use fallback demo data
+ */
+function loadLocalProducts() {
+    items = [
+        {id:1,  title:"Vintage Levi's 501 Jeans",    brand:"Levi's",        category:"pants",       size:"M",        condition:"good",     price:45,  gender:"unisex", aiScore:92, tags:["vintage","denim"],   seller:'alice', color:'blue'},
+        {id:2,  title:"Zara White Blouse",            brand:"Zara",          category:"shirt",       size:"S",        condition:"like-new", price:25,  gender:"women",  aiScore:88, tags:["office","white"],    seller:'bob',   color:'white'},
+        {id:3,  title:"H&M Floral Summer Dress",      brand:"H&M",           category:"dress",       size:"M",        condition:"good",     price:20,  gender:"women",  aiScore:85, tags:["summer","floral"],   seller:'carla', color:'multicolor'},
+        {id:4,  title:"Nike Black Windbreaker",        brand:"Nike",          category:"jacket",      size:"L",        condition:"like-new", price:50,  gender:"unisex", aiScore:90, tags:["sports","black"],    seller:'dan',   color:'black'},
+        {id:5,  title:"Adidas White Sneakers",         brand:"Adidas",        category:"shoes",       size:"42",       condition:"good",     price:40,  gender:"unisex", aiScore:87, tags:["casual","white"],    seller:'erin',  color:'white'},
+        {id:6,  title:"Mango Leather Jacket",          brand:"Mango",         category:"jacket",      size:"M",        condition:"like-new", price:85,  gender:"women",  aiScore:94, tags:["leather","brown"],   seller:'frank', color:'brown'},
+        {id:7,  title:"Uniqlo White T-Shirt",          brand:"Uniqlo",        category:"shirt",       size:"L",        condition:"new",      price:12,  gender:"unisex", aiScore:82, tags:["basics","white"],    seller:'gina',  color:'white'},
+        {id:8,  title:"Vintage Gucci Belt",            brand:"Gucci",         category:"accessories", size:"One Size", condition:"good",     price:180, gender:"unisex", aiScore:96, tags:["luxury","black"],    seller:'harry', color:'black'},
+        {id:9,  title:"Calvin Klein Blue Shirt",       brand:"Calvin Klein",  category:"shirt",       size:"M",        condition:"like-new", price:35,  gender:"men",    aiScore:89, tags:["office","blue"],     seller:'alice', color:'blue'},
+        {id:10, title:"Gap Straight Jeans",            brand:"Gap",           category:"pants",       size:"32",       condition:"good",     price:25,  gender:"men",    aiScore:84, tags:["denim","blue"],      seller:'bob',   color:'blue'},
+        {id:11, title:"Forever 21 Mini Skirt",         brand:"Forever 21",    category:"dress",       size:"S",        condition:"good",     price:10,  gender:"women",  aiScore:79, tags:["casual","black"],    seller:'carla', color:'black'},
+        {id:12, title:"Puma Red Sneakers",             brand:"Puma",          category:"shoes",       size:"39",       condition:"like-new", price:45,  gender:"women",  aiScore:86, tags:["sports","red"],      seller:'dan',   color:'red'}
+    ];
+}
 
 let filteredItems = [...items];
 let currentUser   = null;
@@ -963,9 +1074,22 @@ let searchSuggestIdx  = -1;
 let isMyListings = false;
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     loadTheme();
     loadPersisted();
+    
+    // Try to load products from backend, fallback to local data
+    const backendLoaded = await loadProductsFromBackend();
+    if (!backendLoaded) {
+        console.log('Using local demo data for products');
+        loadLocalProducts();
+    }
+    
+    // Initialize user if logged in
+    if (currentUser && api.isAuthenticated()) {
+        handleUserLogin(api.getCurrentUser());
+    }
+    
     displayItems(items);
     displayRecs();
     updateStats();
@@ -1030,28 +1154,124 @@ function showAuthPanel(idx) {
 function closeAuth() { closeOverlay('authOverlay'); }
 
 function doLogin() {
-    const u = document.getElementById('loginUser').value.trim();
-    const p = document.getElementById('loginPass').value;
-    if (!u||!p) { alert('Please fill in all fields.'); return; }
-    // Check built-in seller/buyer accounts
-    if (SELLER_ACCOUNTS[u] && SELLER_ACCOUNTS[u] === p) { login(u); return; }
-    // Check user-created accounts
-    const users = JSON.parse(localStorage.getItem('ss_users')||'{}');
-    if (users[u] && users[u] === p) { login(u); return; }
-    alert('Invalid credentials. Please try again or create a new account.');
+    const emailOrUsername = document.getElementById('loginUser').value.trim();
+    const password = document.getElementById('loginPass').value;
+    
+    if (!emailOrUsername || !password) {
+        alert('Please fill in all fields.');
+        return;
+    }
+
+    // Show loading state
+    const loginBtn = document.querySelector('#loginTab button');
+    const originalText = loginBtn.textContent;
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+
+    // Try backend API first
+    api.login(emailOrUsername, password)
+        .then(response => {
+            if (response.success) {
+                const user = response.user;
+                currentUser = user.email;
+                localStorage.setItem('ss_user', user.email);
+                handleUserLogin(user);
+                updateAuthUI();
+                closeAuth();
+                showTab('browse');
+                console.log('Backend login successful');
+            } else {
+                alert(response.message || 'Login failed');
+            }
+        })
+        .catch(error => {
+            console.log('Backend login failed, trying local accounts:', error);
+            // Fallback to local accounts for demo
+            if (SELLER_ACCOUNTS[emailOrUsername] && SELLER_ACCOUNTS[emailOrUsername] === password) {
+                login(emailOrUsername);
+                return;
+            }
+            const users = JSON.parse(localStorage.getItem('ss_users')||'{}');
+            if (users[emailOrUsername] && users[emailOrUsername] === password) {
+                login(emailOrUsername);
+                return;
+            }
+            alert('Invalid credentials. Please try again or create a new account.');
+        })
+        .finally(() => {
+            loginBtn.disabled = false;
+            loginBtn.textContent = originalText;
+        });
 }
+
 function doCreate() {
-    const u = document.getElementById('createUser').value.trim();
-    const p = document.getElementById('createPass').value;
-    const pc = document.getElementById('createPassConf').value;
-    if (!u||!p||!pc) { alert('Please fill in all fields.'); return; }
-    if (p !== pc) { alert('Passwords do not match.'); return; }
-    if (p.length < 6) { alert('Password must be at least 6 characters.'); return; }
-    if (SELLER_ACCOUNTS[u]) { alert('This username is reserved. Please choose another.'); return; }
-    const users = JSON.parse(localStorage.getItem('ss_users')||'{}');
-    if (users[u]) { alert('Username already taken.'); return; }
-    users[u] = p; localStorage.setItem('ss_users', JSON.stringify(users));
-    login(u);
+    const firstName = document.getElementById('createUser').value.trim();
+    const password = document.getElementById('createPass').value;
+    const passwordConfirm = document.getElementById('createPassConf').value;
+    const email = document.getElementById('createEmail')?.value.trim() || `${firstName.toLowerCase()}@secondstyle.local`;
+    
+    if (!firstName || !password || !passwordConfirm) {
+        alert('Please fill in all fields.');
+        return;
+    }
+    
+    if (password !== passwordConfirm) {
+        alert('Passwords do not match.');
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters.');
+        return;
+    }
+    
+    if (SELLER_ACCOUNTS[firstName]) {
+        alert('This username is reserved. Please choose another.');
+        return;
+    }
+
+    // Show loading state
+    const createBtn = document.querySelector('#createTab button');
+    const originalText = createBtn.textContent;
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating account...';
+
+    // Try backend API first
+    api.register({
+        firstName: firstName,
+        lastName: '',
+        email: email,
+        password: password,
+        confirmPassword: passwordConfirm
+    })
+        .then(response => {
+            if (response.success) {
+                alert('Account created successfully! You can now log in.');
+                document.getElementById('loginUser').value = firstName;
+                document.getElementById('loginPass').value = '';
+            } else {
+                alert(response.message || 'Registration failed');
+            }
+        })
+        .catch(error => {
+            console.log('Backend registration failed, using local storage:', error);
+            // Fallback to local storage for demo
+            const users = JSON.parse(localStorage.getItem('ss_users')||'{}');
+            if (users[firstName]) {
+                alert('Username already taken.');
+                return;
+            }
+            users[firstName] = password;
+            localStorage.setItem('ss_users', JSON.stringify(users));
+            alert('Account created locally. You can now log in.');
+            document.getElementById('createUser').value = '';
+            document.getElementById('createPass').value = '';
+            document.getElementById('createPassConf').value = '';
+        })
+        .finally(() => {
+            createBtn.disabled = false;
+            createBtn.textContent = originalText;
+        });
 }
 function doForgot() {
     const u = document.getElementById('forgotUser').value.trim();
@@ -1069,7 +1289,30 @@ function doForgot() {
     } else alert('Token mismatch.');
 }
 function login(u) { currentUser=u; localStorage.setItem('ss_user',u); updateAuthUI(); closeAuth(); showTab('browse'); }
-function logout() { currentUser=null; localStorage.removeItem('ss_user'); updateAuthUI(); showTab('browse'); }
+function logout() {
+    if (currentUser && api.isAuthenticated()) {
+        api.logout()
+            .then(() => {
+                console.log('Backend logout successful');
+            })
+            .catch(error => {
+                console.error('Backend logout error:', error);
+            })
+            .finally(() => {
+                currentUser = null;
+                localStorage.removeItem('ss_user');
+                if (socket) socket.disconnect();
+                updateAuthUI();
+                showTab('browse');
+            });
+    } else {
+        currentUser = null;
+        localStorage.removeItem('ss_user');
+        if (socket) socket.disconnect();
+        updateAuthUI();
+        showTab('browse');
+    }
+}
 
 function updateAuthUI() {
     const btn = document.getElementById('authBtn');
