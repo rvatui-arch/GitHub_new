@@ -376,4 +376,4 @@ class APIService {
 }
 
 // Export singleton instance
-const api = new APIService('http://localhost:5000/api');
+const api = new APIService('http://localhost:8000/api');
