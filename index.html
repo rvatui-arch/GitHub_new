@@ -496,7 +496,7 @@
         <button class="btn btn-ghost" onclick="currentUser ? showProfile(currentUser) : openAuthModal()">Account</button>
         <button class="btn btn-ghost badge-btn" id="messagesBtn" onclick="toggleChatsPanel()">💬 Messages<span class="badge-count" id="unreadBadge" style="display:none">0</span></button>
         <button class="btn btn-ghost" onclick="showTab('sell')">Sell</button>
-        <button class="btn btn-ghost" onclick="showTab('favorites')">❤️ Saved</button>
+        <button class="btn btn-ghost" id="savedNavBtn" onclick="showTab('favorites')">❤️ Saved</button>
         <button class="btn btn-ghost badge-btn" id="cartNavBtn" onclick="showCart()">🛒 Cart<span class="badge-count" id="cartBadge" style="display:none">0</span></button>
         <button class="theme-toggle" onclick="openSettings()" title="Settings">⚙️</button>
         <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
@@ -1409,6 +1409,7 @@ function updateAuthUI() {
     const msgBtn = document.getElementById('messagesBtn');
     const cartBtn = document.getElementById('cartNavBtn');
     const ordersBtn = document.getElementById('myOrdersTabBtn');
+    const savedBtn = document.getElementById('savedNavBtn');
     if (currentUser) {
         btn.textContent = 'Sign Out ('+currentUser+')';
         btn.onclick = logout;
@@ -1416,12 +1417,14 @@ function updateAuthUI() {
         if (msgBtn) msgBtn.style.display = 'inline-flex';
         if (cartBtn) cartBtn.style.display = 'inline-flex';
         if (ordersBtn) ordersBtn.style.display = 'inline-block';
+        if (savedBtn) savedBtn.style.display = 'inline-flex';
     } else {
         btn.textContent = 'Sign In'; btn.onclick = openAuthModal;
         if (hubBtn) hubBtn.style.display = 'none';
         if (msgBtn) msgBtn.style.display = 'none';
         if (cartBtn) cartBtn.style.display = 'none';
         if (ordersBtn) ordersBtn.style.display = 'none';
+        if (savedBtn) savedBtn.style.display = 'none';
         // Clear any stale cart data when not logged in
         cart = [];
         updateCartBadge();
@@ -1498,7 +1501,7 @@ function showTab(name) {
         document.getElementById('cartTab').style.display='block';
         renderCart();
     } else if (name==='favorites') {
-        if (!currentUser) { alert('Please sign in to view your saved items.'); openAuthModal(); return; }
+        if (!currentUser) { openAuthModal(); return; }
         hero.style.display='none'; sidebar.style.display='none'; layout.classList.add('no-sidebar');
         document.getElementById('favoritesTab').style.display='block';
         renderFavorites();
@@ -1763,7 +1766,7 @@ function updateFavUI() {
     });
 }
 function toggleFavorite(id) {
-    if (!currentUser) { alert('Sign in to save favourites.'); openAuthModal(); return; }
+    if (!currentUser) { openAuthModal(); return; }
     const sid = String(id);
     const idx = favorites.findIndex(f => String(f) === sid);
     if (idx === -1) favorites.push(sid);
@@ -2725,7 +2728,7 @@ async function submitCommentReply(productId, commentId) {
     try {
         await api.replyToComment(productId, commentId, text);
         await loadComments(productId);
-    } catch(e) { alert('❌ ' + (e.message || 'Eroare')); }
+    } catch(e) { if (!currentUser) return; alert('❌ ' + (e.message || 'Eroare')); }
 }
 
 async function submitComment(productId) {
@@ -2740,6 +2743,7 @@ async function submitComment(productId) {
         if (inp) inp.value = '';
         await loadComments(productId);
     } catch(e) {
+        if (!currentUser) return;
         alert('❌ ' + (e.message || 'Nu s-a putut posta comentariul.'));
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Trimite'; }
@@ -2751,7 +2755,7 @@ async function deleteComment(productId, commentId) {
     try {
         await api.deleteComment(productId, commentId);
         await loadComments(productId);
-    } catch(e) { alert('❌ ' + (e.message || 'Eroare')); }
+    } catch(e) { if (!currentUser) return; alert('❌ ' + (e.message || 'Eroare')); }
 }
 
 // ── PRODUCT REVIEWS ──
@@ -2818,7 +2822,7 @@ async function submitProductReview(productId) {
         await api.addProductReview(productId, rating, text);
         if (textEl) textEl.value = '';
         await loadProductReviews(productId);
-    } catch(e) { alert('❌ ' + (e.message || 'Eroare la recenzie.')); }
+    } catch(e) { if (!currentUser) return; alert('❌ ' + (e.message || 'Eroare la recenzie.')); }
 }
 
 async function deleteProductReview(productId, reviewId) {
@@ -2907,7 +2911,7 @@ async function submitSellerReview(userId) {
         if (textEl) textEl.value = '';
         const cont = document.getElementById('sellerReviewsContainer');
         await loadSellerReviews(userId, cont);
-    } catch(e) { alert('❌ ' + (e.message || 'Eroare.')); }
+    } catch(e) { if (!currentUser) return; alert('❌ ' + (e.message || 'Eroare.')); }
 }
 
 function clickSellerStar(userId, value) {

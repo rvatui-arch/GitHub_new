@@ -44,14 +44,11 @@ class APIService {
       const data = await response.json();
 
       if (!response.ok) {
-        // Token invalid / expired — notify the app to re-login
-        if (response.status === 401 || response.status === 403) {
-          const msg = (data.message || '').toLowerCase();
-          if (msg.includes('token') && (msg.includes('invalid') || msg.includes('expired') || msg.includes('required'))) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            window.dispatchEvent(new CustomEvent('ss:sessionExpired'));
-          }
+        // Token invalid / expired — notify the app to re-login (only on 401)
+        if (response.status === 401) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          window.dispatchEvent(new CustomEvent('ss:sessionExpired'));
         }
         throw new Error(data.message || `API Error: ${response.status}`);
       }
