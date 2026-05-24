@@ -22,4 +22,10 @@ router.get('/:userId', userController.getUserById);
 router.post('/:userId/follow', authenticateToken, userController.followUser);
 router.delete('/:userId/follow', authenticateToken, userController.unfollowUser);
 
+// Seller reviews (public read, auth to write)
+router.get('/:userId/reviews', userController.getSellerReviews);
+router.post('/:userId/reviews', authenticateToken, userController.addSellerReview);
+router.delete('/:userId/reviews/:reviewId', authenticateToken, userController.deleteSellerReview);
+router.post('/:userId/reviews/:reviewId/reply', authenticateToken, userController.replyToSellerReview);
+
 module.exports = router;

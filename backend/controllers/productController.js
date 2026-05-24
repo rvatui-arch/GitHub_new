@@ -245,3 +245,184 @@ exports.getSellerProducts = async (req, res) => {
     return sendError(res, 500, 'Failed to fetch products');
   }
 };
+
+/**
+ * Get Comments for a Product
+ * GET /api/products/:productId/comments
+ */
+exports.getComments = async (req, res) => {
+  try {
+    const Comment = require('../models/Comment');
+    const comments = await Comment.find({ product: req.params.productId })
+      .populate('author', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    return sendSuccess(res, 200, 'Comments fetched', comments);
+  } catch (error) {
+    logger.error('Get comments error:', error);
+    return sendError(res, 500, 'Failed to fetch comments');
+  }
+};
+
+/**
+ * Add Comment to a Product
+ * POST /api/products/:productId/comments
+ */
+exports.addComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return sendError(res, 400, 'Comment text is required');
+
+    const Comment = require('../models/Comment');
+    const comment = await Comment.create({
+      product: req.params.productId,
+      author: req.user._id,
+      text: text.trim(),
+    });
+    await comment.populate('author', 'firstName lastName');
+
+    logger.info(`Comment added by ${req.user.email} on product ${req.params.productId}`);
+    return sendSuccess(res, 201, 'Comment added', comment);
+  } catch (error) {
+    logger.error('Add comment error:', error);
+    return sendError(res, 500, 'Failed to add comment');
+  }
+};
+
+/**
+ * Delete Comment — comment author OR product owner can delete
+ * DELETE /api/products/:productId/comments/:commentId
+ */
+exports.deleteComment = async (req, res) => {
+  try {
+    const Comment = require('../models/Comment');
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) return sendError(res, 404, 'Comment not found');
+
+    const isAuthor = comment.author.toString() === req.user._id.toString();
+    const product  = await Product.findById(req.params.productId).select('seller');
+    const isOwner  = product && product.seller.toString() === req.user._id.toString();
+
+    if (!isAuthor && !isOwner) return sendError(res, 403, 'Not authorized');
+    await comment.deleteOne();
+    return sendSuccess(res, 200, 'Comment deleted');
+  } catch (error) {
+    logger.error('Delete comment error:', error);
+    return sendError(res, 500, 'Failed to delete comment');
+  }
+};
+
+/**
+ * Reply to a Comment (product owner only)
+ * POST /api/products/:productId/comments/:commentId/reply
+ */
+exports.replyToComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return sendError(res, 400, 'Reply text is required');
+
+    const product = await Product.findById(req.params.productId).select('seller');
+    if (!product) return sendError(res, 404, 'Product not found');
+    if (product.seller.toString() !== req.user._id.toString()) {
+      return sendError(res, 403, 'Only the product owner can reply');
+    }
+
+    const Comment = require('../models/Comment');
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) return sendError(res, 404, 'Comment not found');
+
+    comment.replies.push({ author: req.user._id, text: text.trim() });
+    await comment.save();
+    await comment.populate('author', 'firstName lastName');
+    await comment.populate('replies.author', 'firstName lastName');
+
+    return sendSuccess(res, 201, 'Reply added', comment);
+  } catch (error) {
+    logger.error('Reply to comment error:', error);
+    return sendError(res, 500, 'Failed to add reply');
+  }
+};
+
+// ─── PRODUCT REVIEWS ────────────────────────────────────────────────────────
+
+/** Helper — recalculate product averageRating + reviewCount */
+async function recalcProductRating(productId) {
+  const ProductReview = require('../models/ProductReview');
+  const agg = await ProductReview.aggregate([
+    { $match: { product: require('mongoose').Types.ObjectId.createFromHexString(String(productId)) } },
+    { $group: { _id: null, avg: { $avg: '$rating' }, cnt: { $sum: 1 } } },
+  ]);
+  const avg = agg[0] ? Math.round(agg[0].avg * 10) / 10 : 0;
+  const cnt = agg[0] ? agg[0].cnt : 0;
+  await Product.findByIdAndUpdate(productId, { averageRating: avg, reviewCount: cnt });
+}
+
+/**
+ * Get Product Reviews
+ * GET /api/products/:productId/reviews
+ */
+exports.getProductReviews = async (req, res) => {
+  try {
+    const ProductReview = require('../models/ProductReview');
+    const reviews = await ProductReview.find({ product: req.params.productId })
+      .populate('author', 'firstName lastName')
+      .sort({ createdAt: -1 });
+    return sendSuccess(res, 200, 'Reviews fetched', reviews);
+  } catch (error) {
+    logger.error('Get product reviews error:', error);
+    return sendError(res, 500, 'Failed to fetch reviews');
+  }
+};
+
+/**
+ * Add / Update Product Review (one per user per product)
+ * POST /api/products/:productId/reviews
+ */
+exports.addProductReview = async (req, res) => {
+  try {
+    const { rating, text } = req.body;
+    if (!rating || rating < 1 || rating > 5) return sendError(res, 400, 'Rating must be 1-5');
+
+    const product = await Product.findById(req.params.productId).select('seller');
+    if (!product) return sendError(res, 404, 'Product not found');
+    if (product.seller.toString() === req.user._id.toString()) {
+      return sendError(res, 400, 'Cannot review your own product');
+    }
+
+    const ProductReview = require('../models/ProductReview');
+    const review = await ProductReview.findOneAndUpdate(
+      { product: req.params.productId, author: req.user._id },
+      { rating: Number(rating), text: (text || '').trim() },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    await review.populate('author', 'firstName lastName');
+    await recalcProductRating(req.params.productId);
+
+    logger.info(`Product review by ${req.user.email}: ${rating}★`);
+    return sendSuccess(res, 201, 'Review saved', review);
+  } catch (error) {
+    logger.error('Add product review error:', error);
+    return sendError(res, 500, 'Failed to save review');
+  }
+};
+
+/**
+ * Delete Own Product Review
+ * DELETE /api/products/:productId/reviews/:reviewId
+ */
+exports.deleteProductReview = async (req, res) => {
+  try {
+    const ProductReview = require('../models/ProductReview');
+    const review = await ProductReview.findById(req.params.reviewId);
+    if (!review) return sendError(res, 404, 'Review not found');
+    if (review.author.toString() !== req.user._id.toString()) {
+      return sendError(res, 403, 'Not authorized');
+    }
+    await review.deleteOne();
+    await recalcProductRating(req.params.productId);
+    return sendSuccess(res, 200, 'Review deleted');
+  } catch (error) {
+    logger.error('Delete product review error:', error);
+    return sendError(res, 500, 'Failed to delete review');
+  }
+};

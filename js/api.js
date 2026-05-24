@@ -44,6 +44,15 @@ class APIService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Token invalid / expired — notify the app to re-login
+        if (response.status === 401 || response.status === 403) {
+          const msg = (data.message || '').toLowerCase();
+          if (msg.includes('token') && (msg.includes('invalid') || msg.includes('expired') || msg.includes('required'))) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            window.dispatchEvent(new CustomEvent('ss:sessionExpired'));
+          }
+        }
         throw new Error(data.message || `API Error: ${response.status}`);
       }
 
@@ -239,6 +248,85 @@ class APIService {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(reviewData)
+    });
+  }
+
+  // ============ COMMENT ENDPOINTS ============
+
+  async getComments(productId) {
+    return this.request(`/products/${productId}/comments`);
+  }
+
+  async addComment(productId, text) {
+    return this.request(`/products/${productId}/comments`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  async deleteComment(productId, commentId) {
+    return this.request(`/products/${productId}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async replyToComment(productId, commentId, text) {
+    return this.request(`/products/${productId}/comments/${commentId}/reply`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  // ============ PRODUCT REVIEWS ============
+
+  async getProductReviews(productId) {
+    return this.request(`/products/${productId}/reviews`);
+  }
+
+  async addProductReview(productId, rating, text) {
+    return this.request(`/products/${productId}/reviews`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ rating, text }),
+    });
+  }
+
+  async deleteProductReview(productId, reviewId) {
+    return this.request(`/products/${productId}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  // ============ SELLER REVIEWS ============
+
+  async getSellerReviews(userId) {
+    return this.request(`/users/${userId}/reviews`);
+  }
+
+  async addSellerReview(userId, rating, text) {
+    return this.request(`/users/${userId}/reviews`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ rating, text }),
+    });
+  }
+
+  async deleteSellerReview(userId, reviewId) {
+    return this.request(`/users/${userId}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  async replyToSellerReview(userId, reviewId, text) {
+    return this.request(`/users/${userId}/reviews/${reviewId}/reply`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ text }),
     });
   }
 

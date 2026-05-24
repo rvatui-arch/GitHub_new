@@ -75,7 +75,7 @@ exports.analyzeTryOn = async (req, res) => {
       { title: itemTitle || 'item', brand: itemBrand, category: itemCategory, color: itemColor, condition: itemCondition, size: itemSize }
     );
 
-    logger.info(`Style analysis done for user ${req.user._id}`);
+    logger.info('Style analysis done');
     return sendSuccess(res, 200, 'Analysis complete', result);
   } catch (error) {
     logger.error('Style analysis error:', error);

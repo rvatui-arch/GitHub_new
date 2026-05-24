@@ -296,3 +296,112 @@ exports.changePassword = async (req, res) => {
     return sendError(res, 500, 'Failed to change password');
   }
 };
+
+// ─── SELLER REVIEWS ──────────────────────────────────────────────────────────
+
+/** Helper — recalculate shopRating on User */
+async function recalcSellerRating(sellerId) {
+  const SellerReview = require('../models/SellerReview');
+  const agg = await SellerReview.aggregate([
+    { $match: { seller: require('mongoose').Types.ObjectId.createFromHexString(String(sellerId)) } },
+    { $group: { _id: null, avg: { $avg: '$rating' }, cnt: { $sum: 1 } } },
+  ]);
+  const avg = agg[0] ? Math.round(agg[0].avg * 10) / 10 : 0;
+  const cnt = agg[0] ? agg[0].cnt : 0;
+  await User.findByIdAndUpdate(sellerId, { shopRating: avg, shopReviews: cnt });
+}
+
+/**
+ * Get Seller Reviews
+ * GET /api/users/:userId/reviews
+ */
+exports.getSellerReviews = async (req, res) => {
+  try {
+    const SellerReview = require('../models/SellerReview');
+    const reviews = await SellerReview.find({ seller: req.params.userId })
+      .populate('author', 'firstName lastName')
+      .populate('replies.author', 'firstName lastName')
+      .sort({ createdAt: -1 });
+    return sendSuccess(res, 200, 'Seller reviews fetched', reviews);
+  } catch (error) {
+    logger.error('Get seller reviews error:', error);
+    return sendError(res, 500, 'Failed to fetch seller reviews');
+  }
+};
+
+/**
+ * Add / Update Seller Review (one per reviewer per seller)
+ * POST /api/users/:userId/reviews
+ */
+exports.addSellerReview = async (req, res) => {
+  try {
+    const { rating, text } = req.body;
+    if (!rating || rating < 1 || rating > 5) return sendError(res, 400, 'Rating must be 1-5');
+    if (req.params.userId === req.user._id.toString()) {
+      return sendError(res, 400, 'Cannot review yourself');
+    }
+
+    const SellerReview = require('../models/SellerReview');
+    const review = await SellerReview.findOneAndUpdate(
+      { seller: req.params.userId, author: req.user._id },
+      { rating: Number(rating), text: (text || '').trim() },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    await review.populate('author', 'firstName lastName');
+    await recalcSellerRating(req.params.userId);
+
+    logger.info(`Seller review by ${req.user.email} on ${req.params.userId}: ${rating}★`);
+    return sendSuccess(res, 201, 'Seller review saved', review);
+  } catch (error) {
+    logger.error('Add seller review error:', error);
+    return sendError(res, 500, 'Failed to save seller review');
+  }
+};
+
+/**
+ * Delete Own Seller Review
+ * DELETE /api/users/:userId/reviews/:reviewId
+ */
+exports.deleteSellerReview = async (req, res) => {
+  try {
+    const SellerReview = require('../models/SellerReview');
+    const review = await SellerReview.findById(req.params.reviewId);
+    if (!review) return sendError(res, 404, 'Review not found');
+    if (review.author.toString() !== req.user._id.toString()) {
+      return sendError(res, 403, 'Not authorized');
+    }
+    await review.deleteOne();
+    await recalcSellerRating(req.params.userId);
+    return sendSuccess(res, 200, 'Review deleted');
+  } catch (error) {
+    logger.error('Delete seller review error:', error);
+    return sendError(res, 500, 'Failed to delete review');
+  }
+};
+
+/**
+ * Seller replies to a review on their own profile
+ * POST /api/users/:userId/reviews/:reviewId/reply
+ */
+exports.replyToSellerReview = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return sendError(res, 400, 'Reply text is required');
+    if (req.params.userId !== req.user._id.toString()) {
+      return sendError(res, 403, 'Only the seller can reply to their own reviews');
+    }
+
+    const SellerReview = require('../models/SellerReview');
+    const review = await SellerReview.findById(req.params.reviewId);
+    if (!review) return sendError(res, 404, 'Review not found');
+
+    review.replies.push({ author: req.user._id, text: text.trim() });
+    await review.save();
+    await review.populate('author', 'firstName lastName');
+    await review.populate('replies.author', 'firstName lastName');
+    return sendSuccess(res, 201, 'Reply added', review);
+  } catch (error) {
+    logger.error('Reply to seller review error:', error);
+    return sendError(res, 500, 'Failed to add reply');
+  }
+};

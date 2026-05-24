@@ -52,9 +52,16 @@
         .quick-filter-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
         .quick-filter-row select, .quick-filter-row button { flex:1; min-width:160px; }
         .quick-filter-row .btn { padding:12px 18px; }
-        .item-gallery { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:16px; }
-        .item-gallery img { width:100%; height:72px; object-fit:cover; border-radius:14px; cursor:pointer; border:2px solid transparent; transition:border-color var(--transition); }
-        .item-gallery img.active { border-color:var(--terracotta); }
+        .modal-img-wrapper { position:relative; overflow:hidden; line-height:0; }
+        .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.88); border:none; border-radius:50%; width:38px; height:38px; font-size:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:5; color:var(--charcoal); box-shadow:0 2px 10px rgba(0,0,0,0.2); transition:background 0.2s; padding:0; line-height:1; }
+        .gallery-arrow:hover { background:white; }
+        .gallery-prev { left:12px; }
+        .gallery-next { right:12px; }
+        .gallery-thumbs { display:flex; gap:8px; padding:10px 16px; overflow-x:auto; background:var(--pale); border-bottom:1px solid var(--cream-deep); scrollbar-width:thin; }
+        .gallery-thumbs::-webkit-scrollbar { height:4px; }
+        .gallery-thumbs::-webkit-scrollbar-thumb { background:var(--sand); border-radius:2px; }
+        .gallery-thumb { flex-shrink:0; width:68px; height:68px; object-fit:cover; border-radius:10px; cursor:pointer; border:2.5px solid transparent; transition:border-color var(--transition); }
+        .gallery-thumb.active { border-color:var(--terracotta); box-shadow:0 0 0 2px rgba(185,107,80,0.25); }
         .favorite-btn { position:absolute; top:12px; left:12px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.9); color:var(--terracotta); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.08); cursor:pointer; z-index:10; }
         .follow-btn { margin-left:auto; }
         .profile-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
@@ -271,7 +278,7 @@
         .overlay.visible .item-modal { transform:none; opacity:1; }
         .modal-close { position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%; background:var(--cream-deep); border:none; font-size:18px; cursor:pointer; color:var(--warm-gray); display:flex; align-items:center; justify-content:center; transition:all var(--transition); z-index:10; }
         .modal-close:hover { background:var(--sand); color:var(--charcoal); }
-        .modal-img { width:100%; height:320px; object-fit:cover; border-radius:var(--radius-xl) var(--radius-xl) 0 0; }
+        .modal-img { width:100%; height:320px; object-fit:cover; border-radius:var(--radius-xl) var(--radius-xl) 0 0; display:block; transition:opacity 0.15s ease; }
         .modal-body { padding:28px; }
         .modal-brand { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--terracotta); font-weight:600; margin-bottom:6px; }
         .modal-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; margin-bottom:16px; }
@@ -300,6 +307,41 @@
         body.dark .tryon-panel { background:var(--sand); border-color:var(--forest-light); }
         .tryon-panel img { width:100%; height:100%; object-fit:cover; }
         .tryon-label { position:absolute; top:10px; left:10px; background:rgba(245,239,228,0.88); backdrop-filter:blur(8px); padding:4px 10px; border-radius:999px; font-size:11px; font-weight:600; color:var(--charcoal); }
+        /* COMMENTS & REVIEWS */
+        .comments-section { border-top:1px solid var(--cream-deep); margin-top:24px; padding-top:20px; }
+        .reviews-section  { border-top:1px solid var(--cream-deep); margin-top:24px; padding-top:20px; }
+        .comment-item { padding:10px 0; border-bottom:1px solid var(--cream-deep); }
+        .comment-item:last-child { border-bottom:none; }
+        .comment-author { font-weight:600; font-size:13px; color:var(--charcoal); }
+        .comment-date { font-size:11px; color:var(--warm-gray); margin-left:8px; }
+        .comment-text { font-size:13px; color:var(--charcoal); margin-top:3px; line-height:1.5; }
+        .comment-actions { display:flex; gap:10px; margin-top:5px; }
+        .comment-action-btn { background:none; border:none; cursor:pointer; font-size:11px; color:var(--warm-gray); padding:0; }
+        .comment-action-btn:hover { color:var(--forest); }
+        .comment-action-btn.del:hover { color:var(--terracotta); }
+        .comment-reply { margin-top:6px; margin-left:20px; padding:8px 10px; background:var(--cream); border-left:2px solid var(--forest-light); border-radius:0 6px 6px 0; }
+        .comment-reply .comment-author { font-size:12px; }
+        .comment-reply .comment-text { font-size:12px; }
+        .reply-form { display:flex; gap:6px; margin-top:8px; margin-left:20px; }
+        .reply-form input { flex:1; height:34px; font-size:12px; border:1px solid var(--cream-deep); border-radius:6px; padding:0 10px; background:var(--cream); color:var(--charcoal); }
+        .reply-form .btn { font-size:12px; padding:6px 12px; white-space:nowrap; }
+        .comment-form { display:flex; gap:8px; margin-top:14px; }
+        .comment-form textarea { flex:1; min-height:56px; resize:none; font-size:13px; }
+        .comment-form .btn { align-self:flex-end; white-space:nowrap; }
+        /* STAR RATING */
+        .star-display { color:#f5a623; font-size:16px; letter-spacing:1px; }
+        .star-avg { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--forest); }
+        .star-input-row { display:flex; gap:4px; margin:8px 0; }
+        .star-input-row .s { font-size:26px; cursor:pointer; color:var(--cream-deep); transition:color 0.15s; line-height:1; }
+        .star-input-row .s.on { color:#f5a623; }
+        .star-input-row .s:hover { color:#f5a623; }
+        .review-item { padding:12px 0; border-bottom:1px solid var(--cream-deep); }
+        .review-item:last-child { border-bottom:none; }
+        .review-stars { color:#f5a623; font-size:13px; }
+        .review-reply { margin-top:6px; padding:8px 10px; background:var(--cream); border-left:2px solid var(--terracotta); border-radius:0 6px 6px 0; font-size:12px; }
+        .review-reply-form { display:flex; gap:6px; margin-top:8px; }
+        .review-reply-form input { flex:1; height:34px; font-size:12px; border:1px solid var(--cream-deep); border-radius:6px; padding:0 10px; background:var(--cream); color:var(--charcoal); }
+        .seller-rating-badge { display:inline-flex; align-items:center; gap:5px; background:var(--cream); border:1px solid var(--cream-deep); border-radius:999px; padding:4px 12px; font-size:13px; }
         .tryon-placeholder { display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--warm-gray); text-align:center; padding:20px; }
         .tryon-placeholder .icon { font-size:36px; }
         .tryon-loading { position:absolute; inset:0; background:rgba(245,239,228,0.85); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--forest); }
@@ -401,8 +443,13 @@
         body.dark .login-prompt { background:var(--cream-deep); border-color:var(--forest-light); }
         .login-prompt h2 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:400; margin-bottom:12px; }
         .login-prompt p { color:var(--warm-gray); margin-bottom:28px; }
-        .img-previews { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-        .img-preview-item { width:120px; height:120px; object-fit:cover; border-radius:var(--radius-sm); border:2px solid var(--terracotta); }
+        .img-previews { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
+        .img-preview-wrap { position:relative; }
+        .img-preview-item { width:110px; height:110px; object-fit:cover; border-radius:var(--radius-sm); border:2px solid var(--terracotta); display:block; }
+        .img-preview-wrap:first-child .img-preview-item { border-color:var(--forest); }
+        .img-preview-badge { position:absolute; top:4px; left:4px; background:var(--terracotta); color:#fff; font-size:10px; font-weight:700; border-radius:6px; padding:1px 5px; }
+        .img-preview-wrap:first-child .img-preview-badge { background:var(--forest); }
+        .img-preview-rm { position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; border:none; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
 
         /* CART */
         .cart-item { display:grid; grid-template-columns:80px 1fr auto; gap:14px; align-items:center; background:var(--pale); border:1px solid var(--cream-deep); border-radius:var(--radius-md); padding:14px; margin-bottom:12px; }
@@ -446,11 +493,11 @@
         </div>
         <button class="btn btn-ghost" onclick="showTab('browse')">Browse</button>
         <button class="btn btn-ghost help-button" onclick="openHelpCenter()">💡 Help Center</button>
-        <button class="btn btn-ghost" onclick="showProfile(currentUser||'')">Account</button>
+        <button class="btn btn-ghost" onclick="currentUser ? showProfile(currentUser) : openAuthModal()">Account</button>
         <button class="btn btn-ghost badge-btn" id="messagesBtn" onclick="toggleChatsPanel()">💬 Messages<span class="badge-count" id="unreadBadge" style="display:none">0</span></button>
         <button class="btn btn-ghost" onclick="showTab('sell')">Sell</button>
         <button class="btn btn-ghost" onclick="showTab('favorites')">❤️ Saved</button>
-        <button class="btn btn-ghost badge-btn" onclick="showCart()">🛒 Cart<span class="badge-count" id="cartBadge" style="display:none">0</span></button>
+        <button class="btn btn-ghost badge-btn" id="cartNavBtn" onclick="showCart()">🛒 Cart<span class="badge-count" id="cartBadge" style="display:none">0</span></button>
         <button class="theme-toggle" onclick="openSettings()" title="Settings">⚙️</button>
         <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
         <button class="btn btn-primary" id="authBtn" onclick="openAuthModal()">Sign In</button>
@@ -518,7 +565,7 @@
                 <div class="tab-bar" id="mainTabBar">
                     <button class="tab-btn active" onclick="showTab('browse')">Browse</button>
                     <button class="tab-btn" onclick="showTab('recommendations')">AI Picks</button>
-                    <button class="tab-btn" onclick="showTab('myOrders')">My Orders</button>
+                    <button class="tab-btn" id="myOrdersTabBtn" onclick="showTab('myOrders')">My Orders</button>
                     <button class="tab-btn" id="sellerHubBtn" style="display:none" onclick="showTab('sellerHub')">🏪 Seller Hub</button>
                 </div>
                 <div class="search-wrap">
@@ -738,29 +785,29 @@
 
 <!-- TRY ON MODAL -->
 <div class="overlay" id="tryonOverlay" onclick="overlayClick(event,'tryonOverlay')">
-    <div class="item-modal" style="position:relative;">
+    <div class="item-modal" style="position:relative;" onclick="event.stopPropagation()">
         <button class="modal-close" onclick="closeOverlay('tryonOverlay')">✕</button>
         <div class="modal-body">
             <div class="modal-brand">Virtual Try-On</div>
             <div class="modal-title" id="tryonTitle">Try On</div>
-            <p style="color:var(--warm-gray);font-size:13px;margin-bottom:16px;">Upload a full-body photo and our AI will generate a personalised try-on result.</p>
+            <p style="color:var(--warm-gray);font-size:13px;margin-bottom:16px;">Încarcă o fotografie și AI-ul va analiza ce stil ți se potrivește cu acest produs.</p>
             <div class="tryon-grid">
                 <div>
-                    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:8px;">Garment</div>
+                    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:8px;">Produs</div>
                     <div class="tryon-panel"><img id="tryonGarmentImg" src="" alt="Garment"><div class="tryon-label">Item</div></div>
                 </div>
                 <div>
-                    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:8px;">Result</div>
+                    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:8px;">Analiza ta AI</div>
                     <div class="tryon-panel" id="tryonResultPanel">
-                        <div class="tryon-placeholder"><div class="icon">🤖</div><p style="font-size:13px;">Upload your photo to see the try-on result</p></div>
+                        <div class="tryon-placeholder"><div class="icon">🤖</div><p style="font-size:13px;">Încarcă o fotografie pentru a vedea analiza AI</p></div>
                     </div>
                 </div>
             </div>
             <input type="file" id="tryonInput" accept="image/*" style="display:none" onchange="processTryOn()">
             <div style="text-align:center;margin-top:16px;">
-                <button class="btn btn-primary" style="font-size:14px;padding:12px 28px;" onclick="document.getElementById('tryonInput').click()">📸 Upload Your Photo</button>
+                <button class="btn btn-primary" style="font-size:14px;padding:12px 28px;" onclick="event.stopPropagation(); document.getElementById('tryonInput').click()">📸 Încarcă Fotografia Ta</button>
             </div>
-            <p style="text-align:center;font-size:11px;color:var(--warm-gray);margin-top:10px;" id="tryonPoweredBy">Powered by Claude AI · Add a Replicate key in ⚙️ Settings for garment overlay</p>
+            <p style="text-align:center;font-size:11px;color:var(--warm-gray);margin-top:10px;">Powered by AI · Analiză de stil personalizată</p>
         </div>
     </div>
 </div>
@@ -1038,15 +1085,19 @@ async function loadProductsFromBackend() {
             items = response.data.map(product => ({
                 id: product._id,
                 title: product.title,
-                brand: product.seller?.shopName || 'Unknown',
+                brand: product.seller?.shopName || product.brand || 'Unknown',
                 category: product.category,
                 size: product.size || 'One Size',
                 condition: product.condition || 'good',
                 price: product.price,
                 gender: product.gender || 'unisex',
                 aiScore: product.averageRating ? Math.round(product.averageRating * 10) : 80,
+                averageRating: product.averageRating || 0,
+                reviewCount: product.reviewCount || 0,
                 tags: product.tags || [],
                 seller: product.seller?._id || product.seller,
+                sellerId: product.seller?._id || product.seller, // backend ObjectId for reviews
+                sellerEmail: product.seller?.email || '',
                 color: product.color || 'unknown',
                 images: (product.images || []).map(img => (img && typeof img === 'object') ? img.url : img).filter(Boolean),
                 image: (product.images && product.images[0]) ? (typeof product.images[0] === 'object' ? product.images[0].url : product.images[0]) : '',
@@ -1135,7 +1186,7 @@ function loadPersisted() {
         currentUser = null; currentUserId = null;
         localStorage.removeItem('ss_user'); localStorage.removeItem('ss_user_id');
     }
-    try { const ck = currentUser ? 'ss_cart_'+currentUser : 'ss_cart'; const c = localStorage.getItem(ck); if (c) cart = JSON.parse(c); } catch(e) {}
+    try { if (currentUser) { const c = localStorage.getItem('ss_cart_'+currentUser); if (c) cart = JSON.parse(c); } } catch(e) {}
     try { const o = localStorage.getItem('ss_orders');  if (o) orders  = JSON.parse(o); } catch(e) {}
     try { const m = localStorage.getItem('ss_msgs');    if (m) messages= JSON.parse(m); } catch(e) {}
     try { const f = localStorage.getItem('ss_favs');    if (f) favorites = JSON.parse(f); } catch(e) {}
@@ -1356,15 +1407,24 @@ function updateAuthUI() {
     const btn = document.getElementById('authBtn');
     const hubBtn = document.getElementById('sellerHubBtn');
     const msgBtn = document.getElementById('messagesBtn');
+    const cartBtn = document.getElementById('cartNavBtn');
+    const ordersBtn = document.getElementById('myOrdersTabBtn');
     if (currentUser) {
         btn.textContent = 'Sign Out ('+currentUser+')';
         btn.onclick = logout;
         if (hubBtn) hubBtn.style.display = items.some(i => i.seller === currentUser) ? 'inline-block' : 'none';
         if (msgBtn) msgBtn.style.display = 'inline-flex';
+        if (cartBtn) cartBtn.style.display = 'inline-flex';
+        if (ordersBtn) ordersBtn.style.display = 'inline-block';
     } else {
         btn.textContent = 'Sign In'; btn.onclick = openAuthModal;
         if (hubBtn) hubBtn.style.display = 'none';
         if (msgBtn) msgBtn.style.display = 'none';
+        if (cartBtn) cartBtn.style.display = 'none';
+        if (ordersBtn) ordersBtn.style.display = 'none';
+        // Clear any stale cart data when not logged in
+        cart = [];
+        updateCartBadge();
     }
     updateSellView(); updateUnread(); updateAccountButton();
 }
@@ -1568,15 +1628,25 @@ function updateStats() { document.getElementById('totalItemsStat').textContent =
 
 // ── ITEM DETAIL ──
 let currentModalImages = [];
+let currentModalIdx = 0;
 function setMainImg(idx) {
+    currentModalIdx = idx;
     const src = currentModalImages[idx];
     if (!src) return;
     const mi = document.getElementById('modalMainImg');
-    if (mi) mi.src = src;
-    document.querySelectorAll('#itemModalContent .item-gallery img').forEach((img, i) => img.classList.toggle('active', i === idx));
+    if (mi) { mi.src = src; mi.style.opacity='0'; setTimeout(()=>mi.style.opacity='1',0); }
+    document.querySelectorAll('#itemModalContent .gallery-thumb').forEach((img, i) => img.classList.toggle('active', i === idx));
+}
+function prevImg() {
+    if (!currentModalImages.length) return;
+    setMainImg((currentModalIdx - 1 + currentModalImages.length) % currentModalImages.length);
+}
+function nextImg() {
+    if (!currentModalImages.length) return;
+    setMainImg((currentModalIdx + 1) % currentModalImages.length);
 }
 
-function openItem(id) {
+async function openItem(id) {
     const item = items.find(i => String(i.id) === String(id)); if (!item) return;
     trackView(item);
     const rawImgs = Array.isArray(item.images) && item.images.length
@@ -1599,12 +1669,21 @@ function openItem(id) {
         : isSold ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Sold</button>'
         : isReserved ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Reserved</button>'
         : `<button class="modal-btn primary" onclick="addToCart('${sid}');closeOverlay('itemOverlay')">🛒 Add to Cart</button>`;
-    const galleryHtml = rawImgs.length > 1
-        ? `<div class="item-gallery">${rawImgs.map((src, idx) =>
-            `<img src="${src}" alt="${item.title} ${idx+1}" class="${idx===0?'active':''}" onclick="setMainImg(${idx})" onerror="this.src='${catImg(item.category, item.id)}'">`)
-          .join('')}</div>` : '';
+    const arrowsHtml = rawImgs.length > 1
+        ? `<button class="gallery-arrow gallery-prev" onclick="prevImg()">&#8249;</button><button class="gallery-arrow gallery-next" onclick="nextImg()">&#8250;</button>`
+        : '';
+    const thumbsHtml = rawImgs.length > 1
+        ? `<div class="gallery-thumbs">${rawImgs.map((src, idx) =>
+            `<img src="${src}" class="gallery-thumb${idx===0?' active':''}" onclick="setMainImg(${idx})" onerror="this.src='${catImg(item.category, item.id)}'">`)
+          .join('')}</div>`
+        : '';
+    currentModalIdx = 0;
     document.getElementById('itemModalContent').innerHTML = `
-        <img src="${mainImg}" class="modal-img" id="modalMainImg" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
+        <div class="modal-img-wrapper">
+            <img src="${mainImg}" class="modal-img" id="modalMainImg" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'" style="transition:opacity 0.15s;">
+            ${arrowsHtml}
+        </div>
+        ${thumbsHtml}
         <div class="modal-body">
             <div class="modal-brand">${item.brand}</div>
             <div class="modal-title">${item.title}</div>
@@ -1619,7 +1698,6 @@ function openItem(id) {
                 <div class="modal-meta-item"><div class="ml">Price</div><div class="mv">€${Math.round(item.price)}</div></div>
             </div>
             ${item.description ? `<p style="color:var(--warm-gray);font-size:13px;line-height:1.6;margin-bottom:20px;">${item.description}</p>` : ''}
-            ${galleryHtml}
             <div class="modal-seller">
                 <div class="seller-avatar">${sellerName.charAt(0).toUpperCase()}</div>
                 <div><div style="font-weight:600;font-size:14px;cursor:pointer;color:var(--forest);" onclick="showProfile('${sellerName}')">${sellerName}</div><div style="font-size:12px;color:var(--warm-gray);">Seller</div></div>
@@ -1630,9 +1708,40 @@ function openItem(id) {
                 <button class="modal-btn secondary" onclick="openTryon('${sid}')">🤖 Virtual Try-On</button>
                 ${ownerActions}
             </div>
-            ${renderReviewSection(item)}
+            <!-- PRODUCT REVIEWS -->
+            <div class="reviews-section">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <span style="font-size:16px;font-weight:600;">⭐ Recenzii produs</span>
+                    <span id="reviewAvg_${sid}"></span>
+                </div>
+                <div id="reviewsList_${sid}"><div style="color:var(--warm-gray);font-size:13px;">Se încarcă...</div></div>
+                ${currentUser && currentUser !== sellerName ? `
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--cream-deep);">
+                    <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Lasă o recenzie:</div>
+                    <div class="star-input-row" id="starInput_${sid}">
+                        ${[1,2,3,4,5].map(n=>`<span class="s" data-v="${n}" onclick="clickStar('${sid}',${n})">★</span>`).join('')}
+                    </div>
+                    <textarea id="reviewText_${sid}" class="form-textarea" placeholder="Scrie opinia ta (opțional)..." rows="2" style="margin-top:8px;resize:none;font-size:13px;"></textarea>
+                    <button class="btn btn-primary" style="margin-top:8px;" onclick="submitProductReview('${sid}')">Trimite recenzia</button>
+                </div>` : currentUser === sellerName ? '' :
+                `<p style="color:var(--warm-gray);font-size:13px;margin-top:10px;"><a href="#" onclick="event.preventDefault();openAuthModal()">Loghează-te</a> pentru a lăsa o recenzie.</p>`}
+            </div>
+            <!-- COMMENTS -->
+            <div class="comments-section">
+                <div style="font-size:16px;font-weight:600;margin-bottom:12px;">💬 Comentarii</div>
+                <div id="commentsList_${sid}"><div style="color:var(--warm-gray);font-size:13px;">Se încarcă...</div></div>
+                ${currentUser
+                    ? `<div class="comment-form">
+                           <textarea id="commentInput_${sid}" class="form-textarea" placeholder="Scrie un comentariu..." rows="2"></textarea>
+                           <button class="btn btn-primary" onclick="submitComment('${sid}')">Trimite</button>
+                       </div>`
+                    : `<p style="color:var(--warm-gray);font-size:13px;margin-top:10px;"><a href="#" onclick="event.preventDefault();openAuthModal()">Loghează-te</a> pentru a comenta.</p>`
+                }
+            </div>
         </div>`;
     openOverlay('itemOverlay');
+    loadComments(sid);
+    loadProductReviews(sid);
 }
 
 // ── CART ──
@@ -1644,7 +1753,7 @@ function addToCart(id) {
     cart.push({...item}); save(cartKey(), cart); updateCartBadge();
     alert(`✓ "${item.title}" added to cart`);
 }
-function removeFromCart(id) { cart=cart.filter(c=>c.id!==id); save('ss_cart',cart); updateCartBadge(); renderCart(); }
+function removeFromCart(id) { cart=cart.filter(c=>String(c.id)!==String(id)); save(cartKey(),cart); updateCartBadge(); renderCart(); }
 function updateCartBadge() { const b=document.getElementById('cartBadge'); if(cart.length){b.textContent=cart.length;b.style.display='flex';}else b.style.display='none'; }
 function updateFavUI() {
     const cards = document.querySelectorAll('.favorite-btn');
@@ -1676,7 +1785,7 @@ function renderCart() {
             <div><div style="font-weight:600;margin-bottom:4px;">${item.title}</div><div style="font-size:13px;color:var(--warm-gray);">${item.brand} · Size ${item.size}</div></div>
             <div style="text-align:right;">
                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--forest);margin-bottom:8px;">€${Math.round(item.price)}</div>
-                <button class="btn btn-ghost" style="font-size:12px;color:var(--terracotta);" onclick="removeFromCart(${item.id})">Remove</button>
+                <button class="btn btn-ghost" style="font-size:12px;color:var(--terracotta);" onclick="removeFromCart('${item.id}')">Remove</button>
             </div>
         </div>`;
     }).join('');
@@ -2000,13 +2109,33 @@ function onSellCategoryChange() {
 }
 function handleFileUpload(e) {
     const files = e.target.files; if (!files||!files.length) return;
-    const prev = document.getElementById('imgPreviews'); prev.innerHTML = '';
     uploadedDataUrls = [];
-    Array.from(files).slice(0,5).forEach(f => {
+    const prev = document.getElementById('imgPreviews'); prev.innerHTML = '';
+    Array.from(files).slice(0,5).forEach((f, i) => {
         const r = new FileReader();
-        r.onload = ev => { const img=document.createElement('img'); img.src=ev.target.result; img.className='img-preview-item'; prev.appendChild(img); uploadedDataUrls.push(ev.target.result); };
+        r.onload = ev => {
+            uploadedDataUrls[i] = ev.target.result;
+            renderImgPreviews();
+        };
         r.readAsDataURL(f);
     });
+}
+function renderImgPreviews() {
+    const prev = document.getElementById('imgPreviews');
+    if (!prev) return;
+    prev.innerHTML = '';
+    uploadedDataUrls.forEach((src, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'img-preview-wrap';
+        wrap.innerHTML = `<img src="${src}" class="img-preview-item">
+            <span class="img-preview-badge">${i===0?'Cover':i+1}</span>
+            <button class="img-preview-rm" onclick="removePreview(${i})" title="Remove">✕</button>`;
+        prev.appendChild(wrap);
+    });
+}
+function removePreview(idx) {
+    uploadedDataUrls.splice(idx, 1);
+    renderImgPreviews();
 }
 function handleDrop(e) { e.preventDefault(); const dt=e.dataTransfer; if(dt&&dt.files&&dt.files.length){const inp=document.getElementById('fileInput');inp.files=dt.files;handleFileUpload({target:inp});} }
 function buildAISuggestions() {
@@ -2328,22 +2457,96 @@ function showProfile(username) {
                     <div class="items-grid">${favItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">❤️</div><h3>No saved items yet</h3><p>Tap the heart on any item to save it</p></div>'}</div>
                 </div>
             </div>`;
+        // Own profile — also show seller reviews tab
+        const myId = currentUserId || '';
+        document.getElementById('profileContent').innerHTML += `
+            <div id="accPane_myreviews" style="display:none">
+                <div style="margin-bottom:10px;font-size:13px;color:var(--warm-gray);">Recenziile primite de la cumpărători:</div>
+                <div id="mySellerReviewsContainer"><div style="color:var(--warm-gray);font-size:13px;">Se încarcă...</div></div>
+            </div>`;
+        // inject tab button for reviews
+        const tabBar = document.querySelector('#accPane_info')?.closest('.profile-body')?.querySelector('div[style*="border-bottom"]');
+        if (tabBar) {
+            const btn = document.createElement('button');
+            btn.id = 'accTab_myreviews';
+            btn.style.cssText = tabStyle;
+            btn.textContent = 'Recenzii primite';
+            btn.onclick = () => {
+                switchAccTab('myreviews');
+                loadSellerReviews(myId, document.getElementById('mySellerReviewsContainer'));
+            };
+            tabBar.appendChild(btn);
+        }
     } else {
         // ── PUBLIC PROFILE VIEW ──
         const userItems = items.filter(i => i.seller===username || i.seller===username);
+        // try to get the backend userId for this seller (from items or the user search)
+        const sellerBackendId = userItems.length > 0
+            ? items.find(i => i.seller === username || i.seller === username)?._sellerId || ''
+            : '';
+        const canRate = currentUser && currentUser !== username;
         document.getElementById('profileContent').innerHTML = `
             <div class="profile-banner"></div>
             <div class="profile-avatar">${username.charAt(0).toUpperCase()}</div>
             <div class="profile-body">
                 <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-bottom:4px;">${username}</h2>
-                <p style="color:var(--warm-gray);font-size:13px;margin-bottom:20px;">${userItems.length} items listed</p>
-                ${currentUser&&currentUser!==username?`<button class="btn btn-outline" style="margin-bottom:24px;" onclick="openUserMsg('${username}')">💬 Message ${username}</button>`:''}
-                <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:16px;">Listings</div>
-                <div class="items-grid">${userItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">📭</div><h3>No items</h3></div>'}</div>
+                <p style="color:var(--warm-gray);font-size:13px;margin-bottom:8px;">${userItems.length} produse listate</p>
+                <div id="sellerRatingBadge" style="margin-bottom:16px;"></div>
+                ${currentUser&&currentUser!==username?`<button class="btn btn-outline" style="margin-bottom:16px;" onclick="openUserMsg('${username}')">💬 Mesaj</button>`:''}
+                <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:16px;">Produse</div>
+                <div class="items-grid">${userItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">📭</div><h3>Niciun produs</h3></div>'}</div>
+
+                <div class="reviews-section" id="publicSellerReviews">
+                    <div style="font-size:16px;font-weight:600;margin-bottom:12px;">⭐ Recenzii vânzător</div>
+                    <div id="sellerReviewsContainer"><div style="color:var(--warm-gray);font-size:13px;">Se încarcă...</div></div>
+                </div>
             </div>`;
+        // Load seller reviews by profile username — we need seller's _id
+        // We'll fetch via username mapping through items, or use a userId if known
+        _loadPublicSellerReviews(username);
     }
     openOverlay('profileOverlay');
 }
+
+async function _loadPublicSellerReviews(username) {
+    // find seller _id from items
+    const sellerItem = items.find(i => String(i.seller) === username || String(i.sellerEmail) === username);
+    let sellerId = sellerItem?.sellerId || sellerItem?.seller || '';
+    // fallback: fetch by email if possible
+    const badgeEl = document.getElementById('sellerRatingBadge');
+    const cont = document.getElementById('sellerReviewsContainer');
+    if (!sellerId) {
+        // try fetching the user by their userId stored in any item
+        // since we map seller email → sellerBackendId nowhere, we skip avg here
+        if (cont) cont.innerHTML = '<div style="color:var(--warm-gray);font-size:13px;">ID vânzător necunoscut — recenziile nu pot fi încărcate.</div>';
+        return;
+    }
+    try {
+        const resp = await api.getSellerReviews(sellerId);
+        const reviews = resp.data || [];
+        if (badgeEl && reviews.length) {
+            const avg = (reviews.reduce((s,r)=>s+r.rating,0)/reviews.length).toFixed(1);
+            badgeEl.innerHTML = `<span class="seller-rating-badge">${starsHtml(avg,13)} <strong>${avg}</strong> <span style="color:var(--warm-gray);">(${reviews.length} recenzii)</span></span>`;
+        }
+        if (cont) await loadSellerReviews(sellerId, cont);
+        // show rating form if logged in and not own profile
+        const canRate = currentUser && items.find(i=>i.seller===username)?.seller !== currentUser;
+        if (canRate) {
+            const section = document.getElementById('publicSellerReviews');
+            if (section) section.insertAdjacentHTML('beforeend', `
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--cream-deep);">
+                    <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Evaluează vânzătorul:</div>
+                    <div class="star-input-row" id="sellerStarInput_${sellerId}">
+                        ${[1,2,3,4,5].map(n=>`<span class="s" data-v="${n}" onclick="clickSellerStar('${sellerId}',${n})">★</span>`).join('')}
+                    </div>
+                    <textarea id="sellerReviewText_${sellerId}" class="form-textarea" placeholder="Opinia ta (opțional)..." rows="2" style="margin-top:8px;resize:none;font-size:13px;"></textarea>
+                    <button class="btn btn-primary" style="margin-top:8px;" onclick="submitSellerReview('${sellerId}')">Trimite recenzia</button>
+                </div>`);
+        }
+    } catch(e) { console.warn('Could not load seller reviews', e); }
+}
+
+function openUserMsg(username) { closeOverlay('profileOverlay'); currentChatTarget={toUser:username,itemId:null,itemTitle:null}; renderMsgModal(); }
 function openUserMsg(username) { closeOverlay('profileOverlay'); currentChatTarget={toUser:username,itemId:null,itemTitle:null}; renderMsgModal(); }
 
 // ── VIRTUAL TRY-ON ──
@@ -2359,66 +2562,63 @@ function openTryon(itemId) {
 }
 
 async function processTryOn() {
-    const inp = document.getElementById('tryonInput');
-    if (!inp.files||!inp.files.length) return;
-    const file = inp.files[0];
-    inp.value = ''; // reset so same file can be re-selected next time
-    if (file.size > 8*1024*1024) { alert('Max file size is 8MB.'); return; }
     const panel = document.getElementById('tryonResultPanel');
-    panel.innerHTML = `<div class="tryon-loading"><div class="spinner"></div><div style="font-size:13px;font-weight:500;">AI analizează stilul tău…</div><div style="font-size:11px;color:var(--warm-gray);margin-top:4px;">Poate dura 10–20 secunde</div></div>`;
-
-    const userImgB64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); });
-    const userPhotoUrl = 'data:'+file.type+';base64,'+userImgB64;
-    const item = currentTryonItem;
-
-    let resp, data;
     try {
-        resp = await fetch('http://localhost:5000/api/ai/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userImageBase64: userImgB64,
-                mediaType: file.type || 'image/jpeg',
-                itemTitle: item.title,
-                itemBrand: item.brand,
-                itemCategory: item.category,
-                itemColor: Array.isArray(item.color) ? item.color.join(', ') : (item.color || ''),
-                itemCondition: item.condition,
-                itemSize: Array.isArray(item.size) ? item.size.join(', ') : (item.size || '')
-            })
-        });
-        data = await resp.json();
-    } catch(netErr) {
-        panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">⚠️</div><p style="font-size:13px;">Nu pot contacta serverul. Asigură-te că backend-ul rulează.</p></div>`;
-        return;
-    }
+        const inp = document.getElementById('tryonInput');
+        if (!inp || !inp.files || !inp.files.length) return;
+        const file = inp.files[0];
+        inp.value = '';
+        if (file.size > 8*1024*1024) { alert('Max file size is 8MB.'); return; }
 
-    if (!resp.ok) {
-        if (resp.status === 401) {
-            panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">🔒</div><p style="font-size:13px;">Nu ești autentificat. Te rog să te loghezi și să încerci din nou.</p></div>`;
-        } else {
-            panel.innerHTML = `
-                <img src="${userPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
-                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(44,74,62,0.85));padding:14px;border-radius:0 0 8px 8px;">
-                    <div style="color:white;font-size:12px;font-weight:600;margin-bottom:2px;">${item.title}</div>
-                    <div style="color:rgba(255,255,255,0.75);font-size:11px;">Eroare AI (${resp.status}): ${data.message || 'Încearcă din nou.'}</div>
-                </div><div class="tryon-label">Preview</div>`;
+        panel.innerHTML = `<div class="tryon-loading"><div class="spinner"></div><div style="font-size:13px;font-weight:500;">AI analizează stilul tău…</div><div style="font-size:11px;color:var(--warm-gray);margin-top:4px;">Poate dura 10–20 secunde</div></div>`;
+
+        const userImgB64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); });
+        const userPhotoUrl = 'data:'+file.type+';base64,'+userImgB64;
+        const item = currentTryonItem || {};
+
+        let resp, data;
+        try {
+            resp = await fetch('http://localhost:5000/api/ai/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userImageBase64: userImgB64,
+                    mediaType: file.type || 'image/jpeg',
+                    itemTitle: item.title || '',
+                    itemBrand: item.brand || '',
+                    itemCategory: item.category || '',
+                    itemColor: Array.isArray(item.color) ? item.color.join(', ') : (item.color || ''),
+                    itemCondition: item.condition || '',
+                    itemSize: Array.isArray(item.size) ? item.size.join(', ') : (item.size || '')
+                })
+            });
+            data = await resp.json();
+        } catch(netErr) {
+            panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">⚠️</div><p style="font-size:13px;">Nu pot contacta serverul. Asigură-te că backend-ul rulează pe portul 5000.</p></div>`;
+            return;
         }
-        return;
-    }
 
-    const ai = data.data || {};
-    const score = Math.min(10, Math.max(1, Math.round(ai.styleScore || 8)));
-    const stars = '★'.repeat(Math.min(5,score)) + '☆'.repeat(Math.max(0,5-score));
-    panel.innerHTML = `
-        <img src="${userPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
-        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(20,30,20,0.92));padding:16px 14px 14px;border-radius:0 0 8px 8px;">
-            <div style="color:#f5c97a;font-size:13px;font-weight:700;margin-bottom:4px;">${item.title} · ${stars}</div>
-            <div style="color:rgba(255,255,255,0.92);font-size:12px;line-height:1.5;margin-bottom:6px;">${ai.description || ''}</div>
-            ${ai.tip ? `<div style="color:#a8d5b5;font-size:11px;margin-bottom:2px;">💡 ${ai.tip}</div>` : ''}
-            ${ai.colorMatch ? `<div style="color:#c8e6d4;font-size:11px;">🎨 ${ai.colorMatch}</div>` : ''}
-        </div>
-        <div class="tryon-label">AI Style ✦</div>`;
+        if (!resp.ok) {
+            panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">⚠️</div><p style="font-size:13px;">${data.message || 'Eroare AI. Încearcă din nou.'}</p></div>`;
+            return;
+        }
+
+        const ai = data.data || {};
+        const score = Math.min(10, Math.max(1, Math.round(ai.styleScore || 8)));
+        const stars = '★'.repeat(Math.min(5,score)) + '☆'.repeat(Math.max(0,5-score));
+        panel.innerHTML = `
+            <img src="${userPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(20,30,20,0.92));padding:16px 14px 14px;border-radius:0 0 8px 8px;">
+                <div style="color:#f5c97a;font-size:13px;font-weight:700;margin-bottom:4px;">${item.title || 'Item'} · ${stars}</div>
+                <div style="color:rgba(255,255,255,0.92);font-size:12px;line-height:1.5;margin-bottom:6px;">${ai.description || ''}</div>
+                ${ai.tip ? `<div style="color:#a8d5b5;font-size:11px;margin-bottom:2px;">💡 ${ai.tip}</div>` : ''}
+                ${ai.colorMatch ? `<div style="color:#c8e6d4;font-size:11px;">🎨 ${ai.colorMatch}</div>` : ''}
+            </div>
+            <div class="tryon-label">AI Style ✦</div>`;
+    } catch(err) {
+        console.error('processTryOn error:', err);
+        if (panel) panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">⚠️</div><p style="font-size:13px;">A apărut o eroare. Încearcă din nou.</p></div>`;
+    }
 }
 
 async function callReplicateVTON(apiKey, garmentUrl, item) {
@@ -2447,25 +2647,274 @@ async function callReplicateVTON(apiKey, garmentUrl, item) {
     return result.output;
 }
 
-function renderReviewSection(item) {
-    const reviews = item.reviews || [];
-    if (!reviews.length) {
-        return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-deep);">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:8px;">Reviews</div>
-            <div style="font-size:13px;color:var(--warm-gray);">No reviews yet.</div>
-        </div>`;
+// ── SESSION EXPIRED HANDLER ──
+window.addEventListener('ss:sessionExpired', () => {
+    currentUser = null; currentUserId = null;
+    cart = [];
+    localStorage.removeItem('ss_user');
+    localStorage.removeItem('ss_user_id');
+    updateAuthUI();
+    updateCartBadge();
+    closeOverlay('itemOverlay');
+    openAuthModal();
+});
+
+// ── HELPERS ──
+const starsHtml = (n, size) => {
+    const v = Math.round(Math.min(5, Math.max(0, n)));
+    return `<span class="star-display" style="${size?'font-size:'+size+'px':''}">${'★'.repeat(v)}${'☆'.repeat(5-v)}</span>`;
+};
+
+// ── COMMENTS ──
+async function loadComments(productId) {
+    const listEl = document.getElementById('commentsList_' + productId);
+    if (!listEl) return;
+    // find the product to know who is seller (for reply/delete permissions)
+    const prod = items.find(i => String(i.id) === String(productId));
+    const isProductOwner = prod && currentUser && (String(prod.seller) === String(currentUser) || String(prod.seller) === String(currentUserId));
+    try {
+        const resp = await api.getComments(productId);
+        const comments = resp.data || [];
+        if (!comments.length) {
+            listEl.innerHTML = '<div style="color:var(--warm-gray);font-size:13px;padding:8px 0;">Niciun comentariu. Fii primul!</div>';
+            return;
+        }
+        listEl.innerHTML = comments.map(c => {
+            const name = c.author ? c.author.firstName + ' ' + c.author.lastName : 'Utilizator';
+            const date = new Date(c.createdAt).toLocaleDateString('ro-RO', { day:'2-digit', month:'short' });
+            const isOwn = currentUserId && c.author && String(c.author._id) === String(currentUserId);
+            const canDelete = isOwn || isProductOwner;
+            const canReply = isProductOwner && !isOwn;
+            const repliesHtml = (c.replies || []).map(r => {
+                const rName = r.author ? r.author.firstName + ' ' + r.author.lastName : 'Vânzător';
+                return `<div class="comment-reply"><span class="comment-author">↩ ${rName}</span> <span class="comment-text">${r.text.replace(/</g,'&lt;')}</span></div>`;
+            }).join('');
+            return `<div class="comment-item" id="ci_${c._id}">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><span class="comment-author">${name}</span><span class="comment-date">${date}</span></div>
+                    <div class="comment-actions">
+                        ${canReply ? `<button class="comment-action-btn" onclick="toggleReplyForm('${productId}','${c._id}')">Răspunde</button>` : ''}
+                        ${canDelete ? `<button class="comment-action-btn del" onclick="deleteComment('${productId}','${c._id}')">Șterge</button>` : ''}
+                    </div>
+                </div>
+                <div class="comment-text">${c.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                ${repliesHtml}
+                <div class="reply-form" id="rf_${c._id}" style="display:none;">
+                    <input placeholder="Răspunsul tău..." id="ri_${c._id}">
+                    <button class="btn btn-primary" onclick="submitCommentReply('${productId}','${c._id}')">Trimite</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        if (listEl) listEl.innerHTML = '<div style="color:var(--warm-gray);font-size:13px;">Nu s-au putut încărca comentariile.</div>';
     }
-    const stars = n => '★'.repeat(Math.min(5, Math.round(n))) + '☆'.repeat(Math.max(0, 5 - Math.round(n)));
-    return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-deep);">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:12px;">Reviews</div>
-        ${reviews.map(r => `<div style="background:var(--cream);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:13px;font-weight:600;">${r.user || r.reviewer || 'User'}</span>
-                <span style="color:var(--terracotta);font-size:13px;">${stars(r.rating || 5)}</span>
-            </div>
-            <div style="font-size:13px;color:var(--warm-gray);">${r.comment || r.text || ''}</div>
-        </div>`).join('')}
-    </div>`;
+}
+
+function toggleReplyForm(productId, commentId) {
+    const rf = document.getElementById('rf_' + commentId);
+    if (!rf) return;
+    rf.style.display = rf.style.display === 'none' ? 'flex' : 'none';
+    const inp = document.getElementById('ri_' + commentId);
+    if (inp && rf.style.display === 'flex') inp.focus();
+}
+
+async function submitCommentReply(productId, commentId) {
+    const inp = document.getElementById('ri_' + commentId);
+    const text = inp ? inp.value.trim() : '';
+    if (!text) return;
+    try {
+        await api.replyToComment(productId, commentId, text);
+        await loadComments(productId);
+    } catch(e) { alert('❌ ' + (e.message || 'Eroare')); }
+}
+
+async function submitComment(productId) {
+    if (!currentUser) { openAuthModal(); return; }
+    const inp = document.getElementById('commentInput_' + productId);
+    const text = inp ? inp.value.trim() : '';
+    if (!text) { inp && inp.focus(); return; }
+    const btn = inp ? inp.nextElementSibling : null;
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    try {
+        await api.addComment(productId, text);
+        if (inp) inp.value = '';
+        await loadComments(productId);
+    } catch(e) {
+        alert('❌ ' + (e.message || 'Nu s-a putut posta comentariul.'));
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Trimite'; }
+    }
+}
+
+async function deleteComment(productId, commentId) {
+    if (!confirm('Ștergi comentariul?')) return;
+    try {
+        await api.deleteComment(productId, commentId);
+        await loadComments(productId);
+    } catch(e) { alert('❌ ' + (e.message || 'Eroare')); }
+}
+
+// ── PRODUCT REVIEWS ──
+let _pendingStars = {}; // { productId: rating }
+
+function renderReviewSection(item) { return ''; } // replaced by loadProductReviews
+
+async function loadProductReviews(productId) {
+    const el = document.getElementById('reviewsList_' + productId);
+    if (!el) return;
+    const prod = items.find(i => String(i.id) === String(productId));
+    const isSeller = prod && currentUser && (String(prod.seller)===String(currentUser)||String(prod.seller)===String(currentUserId));
+    try {
+        const resp = await api.getProductReviews(productId);
+        const reviews = resp.data || [];
+        // render average
+        const avgEl = document.getElementById('reviewAvg_' + productId);
+        if (avgEl && reviews.length) {
+            const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+            avgEl.innerHTML = `<span class="star-avg">${avg}</span> ${starsHtml(avg,14)} <span style="font-size:12px;color:var(--warm-gray);">(${reviews.length} recenzii)</span>`;
+        }
+        // my existing review?
+        const myReview = reviews.find(r => r.author && String(r.author._id) === String(currentUserId));
+        if (myReview) _pendingStars[productId] = myReview.rating;
+        updateStarInput(productId, _pendingStars[productId] || 0);
+
+        el.innerHTML = reviews.length ? reviews.map(r => {
+            const name = r.author ? r.author.firstName + ' ' + r.author.lastName : 'Utilizator';
+            const date = new Date(r.createdAt).toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' });
+            const isOwn = currentUserId && r.author && String(r.author._id) === String(currentUserId);
+            return `<div class="review-item">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><span class="comment-author">${name}</span><span class="comment-date">${date}</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;">${starsHtml(r.rating,13)}${isOwn?`<button class="comment-action-btn del" onclick="deleteProductReview('${productId}','${r._id}')">Șterge</button>`:''}</div>
+                </div>
+                ${r.text ? `<div class="comment-text" style="margin-top:3px;">${r.text.replace(/</g,'&lt;')}</div>` : ''}
+            </div>`;
+        }).join('') : '<div style="color:var(--warm-gray);font-size:13px;">Nicio recenzie. Fii primul!</div>';
+    } catch(e) {
+        if (el) el.innerHTML = '<div style="color:var(--warm-gray);font-size:13px;">Nu s-au putut încărca recenziile.</div>';
+    }
+}
+
+function updateStarInput(productId, value) {
+    const row = document.getElementById('starInput_' + productId);
+    if (!row) return;
+    row.querySelectorAll('.s').forEach(s => {
+        s.classList.toggle('on', Number(s.dataset.v) <= value);
+    });
+}
+
+function clickStar(productId, value) {
+    _pendingStars[productId] = value;
+    updateStarInput(productId, value);
+}
+
+async function submitProductReview(productId) {
+    if (!currentUser) { openAuthModal(); return; }
+    const rating = _pendingStars[productId] || 0;
+    if (!rating) { alert('Selectează un număr de stele!'); return; }
+    const textEl = document.getElementById('reviewText_' + productId);
+    const text = textEl ? textEl.value.trim() : '';
+    try {
+        await api.addProductReview(productId, rating, text);
+        if (textEl) textEl.value = '';
+        await loadProductReviews(productId);
+    } catch(e) { alert('❌ ' + (e.message || 'Eroare la recenzie.')); }
+}
+
+async function deleteProductReview(productId, reviewId) {
+    if (!confirm('Ștergi recenzia?')) return;
+    try {
+        await api.deleteProductReview(productId, reviewId);
+        _pendingStars[productId] = 0;
+        await loadProductReviews(productId);
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+// ── SELLER REVIEWS ──
+let _pendingSellerStars = {};
+
+async function loadSellerReviews(userId, containerEl) {
+    if (!containerEl) return;
+    try {
+        const resp = await api.getSellerReviews(userId);
+        const reviews = resp.data || [];
+        const isOwner = currentUserId && String(currentUserId) === String(userId);
+        containerEl.innerHTML = reviews.length ? reviews.map(r => {
+            const name = r.author ? r.author.firstName + ' ' + r.author.lastName : 'Utilizator';
+            const date = new Date(r.createdAt).toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' });
+            const isOwn = currentUserId && r.author && String(r.author._id) === String(currentUserId);
+            const repliesHtml = (r.replies||[]).map(rp => {
+                const rn = rp.author ? rp.author.firstName+' '+rp.author.lastName : 'Vânzător';
+                return `<div class="review-reply">↩ <strong>${rn}:</strong> ${rp.text.replace(/</g,'&lt;')}</div>`;
+            }).join('');
+            return `<div class="review-item" id="sr_${r._id}">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><span class="comment-author">${name}</span><span class="comment-date">${date}</span></div>
+                    <div style="display:flex;align-items:center;gap:8px;">${starsHtml(r.rating,13)}
+                        ${isOwner ? `<button class="comment-action-btn" onclick="toggleSellerReplyForm('${userId}','${r._id}')">Răspunde</button>` : ''}
+                        ${isOwn ? `<button class="comment-action-btn del" onclick="deleteSellerReview('${userId}','${r._id}')">Șterge</button>` : ''}
+                    </div>
+                </div>
+                ${r.text ? `<div class="comment-text" style="margin-top:3px;">${r.text.replace(/</g,'&lt;')}</div>` : ''}
+                ${repliesHtml}
+                <div class="review-reply-form" id="srf_${r._id}" style="display:none;">
+                    <input placeholder="Răspunsul tău..." id="sri_${r._id}">
+                    <button class="btn btn-primary" onclick="submitSellerReviewReply('${userId}','${r._id}')">Trimite</button>
+                </div>
+            </div>`;
+        }).join('') : '<div style="color:var(--warm-gray);font-size:13px;">Nicio recenzie încă.</div>';
+    } catch(e) {
+        containerEl.innerHTML = '<div style="color:var(--warm-gray);font-size:13px;">Nu s-au putut încărca recenziile.</div>';
+    }
+}
+
+function toggleSellerReplyForm(userId, reviewId) {
+    const rf = document.getElementById('srf_' + reviewId);
+    if (!rf) return;
+    rf.style.display = rf.style.display === 'none' ? 'flex' : 'none';
+    const inp = document.getElementById('sri_' + reviewId);
+    if (inp && rf.style.display === 'flex') inp.focus();
+}
+
+async function submitSellerReviewReply(userId, reviewId) {
+    const inp = document.getElementById('sri_' + reviewId);
+    const text = inp ? inp.value.trim() : '';
+    if (!text) return;
+    try {
+        await api.replyToSellerReview(userId, reviewId, text);
+        const cont = document.getElementById('sellerReviewsContainer');
+        await loadSellerReviews(userId, cont);
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+async function deleteSellerReview(userId, reviewId) {
+    if (!confirm('Ștergi recenzia?')) return;
+    try {
+        await api.deleteSellerReview(userId, reviewId);
+        const cont = document.getElementById('sellerReviewsContainer');
+        await loadSellerReviews(userId, cont);
+    } catch(e) { alert('❌ ' + e.message); }
+}
+
+async function submitSellerReview(userId) {
+    if (!currentUser) { openAuthModal(); return; }
+    const rating = _pendingSellerStars[userId] || 0;
+    if (!rating) { alert('Selectează un număr de stele!'); return; }
+    const textEl = document.getElementById('sellerReviewText_' + userId);
+    const text = textEl ? textEl.value.trim() : '';
+    try {
+        await api.addSellerReview(userId, rating, text);
+        if (textEl) textEl.value = '';
+        const cont = document.getElementById('sellerReviewsContainer');
+        await loadSellerReviews(userId, cont);
+    } catch(e) { alert('❌ ' + (e.message || 'Eroare.')); }
+}
+
+function clickSellerStar(userId, value) {
+    _pendingSellerStars[userId] = value;
+    const row = document.getElementById('sellerStarInput_' + userId);
+    if (!row) return;
+    row.querySelectorAll('.s').forEach(s => s.classList.toggle('on', Number(s.dataset.v) <= value));
 }
 
 function openHelpCenter() {
