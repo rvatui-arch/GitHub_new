@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\vatui\\\\Desktop\\\\thesis\\\\GitHub_new\\\\js\" -Recurse | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\) { \"DIR\" } else { \"FILE\" }}} | Format-Table -AutoSize | head -50)",
+      "Bash(find \"/c/Program Files/MongoDB\" -name \"mongod.exe\" 2>/dev/null | head -5)"
+    ]
+  }
+}
