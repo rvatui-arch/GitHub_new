@@ -111,9 +111,61 @@ const deleteFromCloudinary = async (publicId) => {
   }
 };
 
+/**
+ * Analyze style fit using OpenAI GPT-4o-mini vision
+ * Accepts base64 image + item metadata, returns JSON style assessment
+ */
+const analyzeStyleFit = async (imageBase64, mediaType, itemInfo) => {
+  const { title, brand, category, color, condition, size } = itemInfo;
+
+  if (!process.env.OPENAI_API_KEY) throw new Error('OpenAI API key not configured');
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 350,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: `data:${mediaType};base64,${imageBase64}`, detail: 'low' },
+          },
+          {
+            type: 'text',
+            text: `You are a personal fashion stylist. The person in this photo is considering buying: "${title}" by ${brand || 'unknown brand'} (category: ${category}, color: ${color || 'unknown'}, size: ${size || 'unknown'}, condition: ${condition || 'good'}).
+
+Analyze their style from the photo and provide personalized advice. Reply ONLY with valid JSON, no markdown or extra text:
+{"description":"Two vivid sentences about how this specific garment would look on this person based on what you see","styleScore":8,"tip":"One concrete styling tip for wearing this item","colorMatch":"One sentence on how the color works with what they are wearing or their skin tone"}`,
+          },
+        ],
+      }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenAI API error ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json();
+  const raw = data.choices?.[0]?.message?.content || '{}';
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { description: raw, styleScore: 7, tip: '', colorMatch: '' };
+  }
+};
+
 module.exports = {
   uploadToCloudinary,
   validateImage,
   processVirtualTryOn,
+  analyzeStyleFit,
   deleteFromCloudinary,
 };

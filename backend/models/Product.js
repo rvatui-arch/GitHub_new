@@ -100,7 +100,7 @@ const productSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['active', 'inactive', 'sold', 'pending'],
-      default: 'pending',
+      default: 'active',
     },
     isFeatured: {
       type: Boolean,

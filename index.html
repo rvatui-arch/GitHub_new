@@ -444,11 +444,12 @@
             <input type="text" class="user-search-input" placeholder="🔍 Search users…" id="userSearchInput" oninput="handleUserSearch()" autocomplete="off">
             <div class="user-results" id="userResults"></div>
         </div>
+        <button class="btn btn-ghost" onclick="showTab('browse')">Browse</button>
         <button class="btn btn-ghost help-button" onclick="openHelpCenter()">💡 Help Center</button>
         <button class="btn btn-ghost" onclick="showProfile(currentUser||'')">Account</button>
         <button class="btn btn-ghost badge-btn" id="messagesBtn" onclick="toggleChatsPanel()">💬 Messages<span class="badge-count" id="unreadBadge" style="display:none">0</span></button>
-        <button class="btn btn-ghost" onclick="showTab('browse')">Browse</button>
         <button class="btn btn-ghost" onclick="showTab('sell')">Sell</button>
+        <button class="btn btn-ghost" onclick="showTab('favorites')">❤️ Saved</button>
         <button class="btn btn-ghost badge-btn" onclick="showCart()">🛒 Cart<span class="badge-count" id="cartBadge" style="display:none">0</span></button>
         <button class="theme-toggle" onclick="openSettings()" title="Settings">⚙️</button>
         <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
@@ -470,7 +471,7 @@
             </div>
         </div>
         <div class="hero-visual fade-up fade-up-4">
-            <img src="https://images.unsplash.com/photo-1520975914605-80e4b239c72d?w=840&h=760&fit=crop&q=80" alt="SecondStyle curated fashion">
+            <img src="https://images.unsplash.com/photo-1520975914605-80e4b239c72d?w=840&h=760&fit=crop&q=80" alt="SecondStyle curated fashion" onerror="this.src='https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=840&h=760&fit=crop&q=80'">
             <div class="hero-visual-tag"><strong>SecondStyle Spotlight</strong>Premium secondhand finds</div>
         </div>
     </section>
@@ -626,6 +627,15 @@
                 <div class="items-grid" id="myListingsGrid"></div>
             </div>
 
+            <!-- Favorites Tab -->
+            <div id="favoritesTab" style="display:none">
+                <div style="margin-bottom:24px;">
+                    <h2 style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:400;">Saved Items</h2>
+                    <p style="color:var(--warm-gray);margin-top:4px;">Items you've saved by clicking the heart ❤️</p>
+                </div>
+                <div class="items-grid" id="favoritesGrid"></div>
+            </div>
+
             <!-- Cart Tab -->
             <div id="cartTab" style="display:none">
                 <div style="margin-bottom:24px;"><h2 style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:400;">Shopping Cart</h2></div>
@@ -672,7 +682,7 @@
                     <div class="seller-hint">Welcome back! Use your account name and password to sign in, or create a free SecondStyle account.</div>
                     <div class="auth-field"><label>Username</label><input type="text" id="loginUser" placeholder="your username"></div>
                     <div class="auth-field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
-                    <button class="auth-btn" onclick="doLogin()">Sign In →</button>
+                    <button class="auth-btn" id="loginSubmitBtn" onclick="doLogin()">Sign In →</button>
                     <div class="auth-links">
                         <a class="auth-link" onclick="showAuthPanel(2)">Create account</a>
                         <a class="auth-link" onclick="showAuthPanel(3)">Forgot password?</a>
@@ -688,7 +698,7 @@
                     <div class="auth-field"><label>Username</label><input type="text" id="createUser" placeholder="choose a username"></div>
                     <div class="auth-field"><label>Password</label><input type="password" id="createPass" placeholder="at least 6 characters"></div>
                     <div class="auth-field"><label>Confirm Password</label><input type="password" id="createPassConf" placeholder="repeat your password" onkeydown="if(event.key==='Enter')doCreate()"></div>
-                    <button class="auth-btn" onclick="doCreate()">Create Account →</button>
+                    <button class="auth-btn" id="createSubmitBtn" onclick="doCreate()">Create Account →</button>
                     <div class="auth-links"><a class="auth-link" onclick="showAuthPanel(1)">Already have an account?</a></div>
                 </div>
             </div>
@@ -980,6 +990,18 @@ const CATEGORY_IMGS = {
         'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=500&fit=crop',
         'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=500&fit=crop',
         'https://images.unsplash.com/photo-1509941943102-10c232535736?w=400&h=500&fit=crop'
+    ],
+    clothing: [
+        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&h=500&fit=crop'
+    ],
+    other: [
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=500&fit=crop',
+        'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=500&fit=crop'
     ]
 };
 
@@ -989,8 +1011,13 @@ function catImg(cat, id=0) {
     return a[Math.abs(Number(id)||0) % a.length];
 }
 
-// Get best image for an item — specific photo first, then category fallback
+// Get best image for an item — images array first, then specific, then category fallback
 function getItemImg(item) {
+    if (Array.isArray(item.images) && item.images.length) {
+        const first = item.images[0];
+        const url = typeof first === 'string' ? first : (first && first.url);
+        if (url && (url.startsWith('data:') || url.startsWith('http'))) return url;
+    }
     if (item.image && (item.image.startsWith('data:') || item.image.startsWith('http'))) return item.image;
     if (ITEM_IMAGES[item.id]) return ITEM_IMAGES[item.id];
     return catImg(item.category, item.id);
@@ -1007,7 +1034,7 @@ async function loadProductsFromBackend() {
         console.log('Loading products from backend...');
         const response = await api.getProducts();
         
-        if (response.success && response.data) {
+        if (response.success && Array.isArray(response.data) && response.data.length > 0) {
             items = response.data.map(product => ({
                 id: product._id,
                 title: product.title,
@@ -1021,7 +1048,8 @@ async function loadProductsFromBackend() {
                 tags: product.tags || [],
                 seller: product.seller?._id || product.seller,
                 color: product.color || 'unknown',
-                images: product.images || [],
+                images: (product.images || []).map(img => (img && typeof img === 'object') ? img.url : img).filter(Boolean),
+                image: (product.images && product.images[0]) ? (typeof product.images[0] === 'object' ? product.images[0].url : product.images[0]) : '',
                 sold: product.status === 'sold',
                 reserved: product.status === 'reserved'
             }));
@@ -1058,6 +1086,7 @@ function loadLocalProducts() {
 
 let filteredItems = [...items];
 let currentUser   = null;
+let currentUserId = null; // MongoDB _id of the logged-in user
 let cart          = [];
 let orders        = [];
 let messages      = [];
@@ -1100,7 +1129,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function loadPersisted() {
     const u = localStorage.getItem('ss_user'); if (u) currentUser = u;
-    try { const c = localStorage.getItem('ss_cart');    if (c) cart    = JSON.parse(c); } catch(e) {}
+    const uid = localStorage.getItem('ss_user_id'); if (uid) currentUserId = uid;
+    // If user appears logged in but has no valid access token, clear the stale session
+    if (currentUser && !localStorage.getItem('accessToken')) {
+        currentUser = null; currentUserId = null;
+        localStorage.removeItem('ss_user'); localStorage.removeItem('ss_user_id');
+    }
+    try { const ck = currentUser ? 'ss_cart_'+currentUser : 'ss_cart'; const c = localStorage.getItem(ck); if (c) cart = JSON.parse(c); } catch(e) {}
     try { const o = localStorage.getItem('ss_orders');  if (o) orders  = JSON.parse(o); } catch(e) {}
     try { const m = localStorage.getItem('ss_msgs');    if (m) messages= JSON.parse(m); } catch(e) {}
     try { const f = localStorage.getItem('ss_favs');    if (f) favorites = JSON.parse(f); } catch(e) {}
@@ -1111,6 +1146,7 @@ function loadPersisted() {
     updateAuthUI();
 }
 function save(key, data) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {} }
+function cartKey() { return currentUser ? 'ss_cart_' + currentUser : 'ss_cart'; }
 
 // ── THEME ──
 function loadTheme() { if (localStorage.getItem('ss_dark')==='1') { document.body.classList.add('dark'); document.getElementById('themeBtn').textContent='☀️'; } }
@@ -1163,18 +1199,22 @@ function doLogin() {
     }
 
     // Show loading state
-    const loginBtn = document.querySelector('#loginTab button');
-    const originalText = loginBtn.textContent;
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Logging in...';
+    const loginBtn = document.getElementById('loginSubmitBtn');
+    const originalText = loginBtn ? loginBtn.textContent : '';
+    if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Logging in...'; }
 
     // Try backend API first
     api.login(emailOrUsername, password)
         .then(response => {
-            if (response.success) {
-                const user = response.user;
+            if (response.success && response.data) {
+                const user = response.data.user;
                 currentUser = user.email;
+                currentUserId = user._id || null;
                 localStorage.setItem('ss_user', user.email);
+                if (user._id) localStorage.setItem('ss_user_id', user._id);
+                // Load this user's personal cart
+                try { const c = localStorage.getItem('ss_cart_' + user.email); cart = c ? JSON.parse(c) : []; } catch(e) { cart = []; }
+                updateCartBadge();
                 handleUserLogin(user);
                 updateAuthUI();
                 closeAuth();
@@ -1199,8 +1239,7 @@ function doLogin() {
             alert('Invalid credentials. Please try again or create a new account.');
         })
         .finally(() => {
-            loginBtn.disabled = false;
-            loginBtn.textContent = originalText;
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = originalText; }
         });
 }
 
@@ -1231,10 +1270,9 @@ function doCreate() {
     }
 
     // Show loading state
-    const createBtn = document.querySelector('#createTab button');
-    const originalText = createBtn.textContent;
-    createBtn.disabled = true;
-    createBtn.textContent = 'Creating account...';
+    const createBtn = document.getElementById('createSubmitBtn');
+    const originalText = createBtn ? createBtn.textContent : '';
+    if (createBtn) { createBtn.disabled = true; createBtn.textContent = 'Creating account...'; }
 
     // Try backend API first
     api.register({
@@ -1269,8 +1307,7 @@ function doCreate() {
             document.getElementById('createPassConf').value = '';
         })
         .finally(() => {
-            createBtn.disabled = false;
-            createBtn.textContent = originalText;
+            if (createBtn) { createBtn.disabled = false; createBtn.textContent = originalText; }
         });
 }
 function doForgot() {
@@ -1290,14 +1327,15 @@ function doForgot() {
 }
 function login(u) { currentUser=u; localStorage.setItem('ss_user',u); updateAuthUI(); closeAuth(); showTab('browse'); }
 function logout() {
+    if (currentUser) save('ss_cart_' + currentUser, cart);
+    cart = [];
+    currentUserId = null;
+    localStorage.removeItem('ss_user_id');
+    updateCartBadge();
     if (currentUser && api.isAuthenticated()) {
         api.logout()
-            .then(() => {
-                console.log('Backend logout successful');
-            })
-            .catch(error => {
-                console.error('Backend logout error:', error);
-            })
+            .then(() => { console.log('Backend logout successful'); })
+            .catch(error => { console.error('Backend logout error:', error); })
             .finally(() => {
                 currentUser = null;
                 localStorage.removeItem('ss_user');
@@ -1356,7 +1394,7 @@ function showTab(name) {
     const hero    = document.getElementById('heroSection');
     const sidebar = document.getElementById('sidebar');
     const layout  = document.getElementById('mainLayout');
-    const tabs = ['browse','sell','recommendations','myOrders','sellerHub','myListings','cart'];
+    const tabs = ['browse','sell','recommendations','myOrders','sellerHub','myListings','cart','favorites'];
     tabs.forEach(t => { const el = document.getElementById(t+'Tab'); if (el) el.style.display='none'; });
     isMyListings = false;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1399,6 +1437,11 @@ function showTab(name) {
         hero.style.display='none'; sidebar.style.display='none'; layout.classList.add('no-sidebar');
         document.getElementById('cartTab').style.display='block';
         renderCart();
+    } else if (name==='favorites') {
+        if (!currentUser) { alert('Please sign in to view your saved items.'); openAuthModal(); return; }
+        hero.style.display='none'; sidebar.style.display='none'; layout.classList.add('no-sidebar');
+        document.getElementById('favoritesTab').style.display='block';
+        renderFavorites();
     }
 }
 
@@ -1485,32 +1528,37 @@ document.addEventListener('click', e => { if (!e.target.closest('.search-wrap'))
 function displayItems(list) {
     const g = document.getElementById('itemsGrid');
     g.innerHTML = '';
-    if (!list.length) {
+    // Hide the current user's own listings from Browse (they see them in My Listings)
+    const browseList = currentUser
+        ? list.filter(i => String(i.seller) !== String(currentUser) && String(i.seller) !== String(currentUserId))
+        : list;
+    if (!browseList.length) {
         g.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><h3>No items found</h3><p>Try adjusting your filters or search</p></div>';
         return;
     }
-    list.forEach(item => g.appendChild(makeCard(item)));
+    browseList.forEach(item => g.appendChild(makeCard(item)));
 }
 
 function makeCard(item) {
     const card = document.createElement('div');
     card.className = 'item-card';
     const img = getItemImg(item);
-    const isFav = favorites.includes(item.id);
+    const isFav = favorites.some(f => String(f) === String(item.id));
+    const sid = String(item.id);
     card.innerHTML = `
-        <div class="item-img-wrap" onclick="openItem(${item.id})">
+        <div class="item-img-wrap" onclick="openItem('${sid}')">
             <img src="${img}" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
             ${item.aiScore>=90?'<div class="item-badge">AI Pick</div>':''}
             <div class="condition-tag">${item.condition}</div>
-            <button class="favorite-btn" data-item-id="${item.id}" onclick="event.stopPropagation(); toggleFavorite(${item.id});">${isFav?'❤️':'🤍'}</button>
+            <button class="favorite-btn" data-item-id="${sid}" onclick="event.stopPropagation(); toggleFavorite('${sid}');">${isFav?'❤️':'🤍'}</button>
         </div>
-        <div class="item-body">
+        <div class="item-body" onclick="openItem('${sid}')" style="cursor:pointer;">
             <div class="item-brand">${item.brand}</div>
             <div class="item-title">${item.title}</div>
             <div class="item-meta">Size ${item.size} · ${item.gender}</div>
             <div class="item-footer">
                 <div class="item-price">€${Math.round(item.price)}</div>
-                <button class="add-cart-btn" title="Add to cart" onclick="event.stopPropagation(); addToCart(${item.id})">+</button>
+                <button class="add-cart-btn" title="Add to cart" onclick="event.stopPropagation(); addToCart('${sid}')">+</button>
             </div>
         </div>`;
     return card;
@@ -1519,22 +1567,44 @@ function makeCard(item) {
 function updateStats() { document.getElementById('totalItemsStat').textContent = filteredItems.length; }
 
 // ── ITEM DETAIL ──
+let currentModalImages = [];
+function setMainImg(idx) {
+    const src = currentModalImages[idx];
+    if (!src) return;
+    const mi = document.getElementById('modalMainImg');
+    if (mi) mi.src = src;
+    document.querySelectorAll('#itemModalContent .item-gallery img').forEach((img, i) => img.classList.toggle('active', i === idx));
+}
+
 function openItem(id) {
-    const item = items.find(i=>i.id===id); if(!item) return;
+    const item = items.find(i => String(i.id) === String(id)); if (!item) return;
     trackView(item);
-    const images = Array.isArray(item.images) && item.images.length ? item.images : [(item.image && item.image.startsWith('http')) ? item.image : getItemImg(item)];
-    const mainImg = images[0];
+    const rawImgs = Array.isArray(item.images) && item.images.length
+        ? item.images.map(img => (img && typeof img === 'object') ? img.url : img).filter(Boolean)
+        : [];
+    if (!rawImgs.length) rawImgs.push(getItemImg(item));
+    currentModalImages = rawImgs;
+    const mainImg = rawImgs[0];
     const isSold = item.sold;
-    const sellerAction = currentUser && currentUser!==item.seller ? `<button class="btn btn-ghost" style="margin-left:auto;" onclick="openMsg(${item.id})">Message</button>` : '';
-    const ownerActions = currentUser===item.seller ? `<button class="modal-btn secondary" onclick="openEditItem(${item.id})">✎ Edit</button><button class="modal-btn danger" onclick="deleteItem(${item.id})">🗑️ Delete</button>` : '';
+    const sid = String(item.id);
+    const sellerName = item.seller || '?';
+    const sellerAction = currentUser && currentUser !== sellerName
+        ? `<button class="btn btn-ghost" style="margin-left:auto;" onclick="openMsg('${sid}')">Message</button>` : '';
+    const ownerActions = currentUser === sellerName
+        ? `<button class="modal-btn secondary" onclick="openEditItem('${sid}')">✎ Edit</button><button class="modal-btn danger" onclick="deleteItem('${sid}')">🗑️ Delete</button>` : '';
     const isReserved = item.reserved && !item.sold;
-    const availableAction = !currentUser ? '<button class="modal-btn primary" onclick="openAuthModal()">Sign in to buy</button>'
-        : currentUser===item.seller ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Your listing</button>'
+    const availableAction = !currentUser
+        ? '<button class="modal-btn primary" onclick="openAuthModal()">Sign in to buy</button>'
+        : currentUser === sellerName ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Your listing</button>'
         : isSold ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Sold</button>'
         : isReserved ? '<button class="modal-btn primary" disabled style="opacity:0.6;cursor:not-allowed;">Reserved</button>'
-        : `<button class="modal-btn primary" onclick="addToCart(${item.id});closeOverlay('itemOverlay')">🛒 Add to Cart</button>`;
+        : `<button class="modal-btn primary" onclick="addToCart('${sid}');closeOverlay('itemOverlay')">🛒 Add to Cart</button>`;
+    const galleryHtml = rawImgs.length > 1
+        ? `<div class="item-gallery">${rawImgs.map((src, idx) =>
+            `<img src="${src}" alt="${item.title} ${idx+1}" class="${idx===0?'active':''}" onclick="setMainImg(${idx})" onerror="this.src='${catImg(item.category, item.id)}'">`)
+          .join('')}</div>` : '';
     document.getElementById('itemModalContent').innerHTML = `
-        <img src="${mainImg}" class="modal-img" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
+        <img src="${mainImg}" class="modal-img" id="modalMainImg" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
         <div class="modal-body">
             <div class="modal-brand">${item.brand}</div>
             <div class="modal-title">${item.title}</div>
@@ -1548,16 +1618,16 @@ function openItem(id) {
                 <div class="modal-meta-item"><div class="ml">Status</div><div class="mv">${isSold?'Sold':'Available'}</div></div>
                 <div class="modal-meta-item"><div class="ml">Price</div><div class="mv">€${Math.round(item.price)}</div></div>
             </div>
-            ${item.description?`<p style="color:var(--warm-gray);font-size:13px;line-height:1.6;margin-bottom:20px;">${item.description}</p>`:''}
-            <div class="item-gallery">${images.map((src,index)=>`<img src="${src}" alt="${item.title} image ${index+1}" class="${index===0?'active':''}" onclick="document.querySelector('#itemModalContent .modal-img').src='${src}'; document.querySelectorAll('#itemModalContent .item-gallery img').forEach(img=>img.classList.toggle('active', img.src==='${src}'));" onerror="this.src='${catImg(item.category,item.id)}'"></img>`).join('')}</div>
+            ${item.description ? `<p style="color:var(--warm-gray);font-size:13px;line-height:1.6;margin-bottom:20px;">${item.description}</p>` : ''}
+            ${galleryHtml}
             <div class="modal-seller">
-                <div class="seller-avatar">${item.seller.charAt(0).toUpperCase()}</div>
-                <div><div style="font-weight:600;font-size:14px;cursor:pointer;color:var(--forest);" onclick="showProfile('${item.seller}')">${item.seller}</div><div style="font-size:12px;color:var(--warm-gray);">Seller</div></div>
+                <div class="seller-avatar">${sellerName.charAt(0).toUpperCase()}</div>
+                <div><div style="font-weight:600;font-size:14px;cursor:pointer;color:var(--forest);" onclick="showProfile('${sellerName}')">${sellerName}</div><div style="font-size:12px;color:var(--warm-gray);">Seller</div></div>
                 ${sellerAction}
             </div>
             <div class="profile-actions">
                 ${availableAction}
-                <button class="modal-btn secondary" onclick="openTryon(${item.id})">🤖 Virtual Try-On</button>
+                <button class="modal-btn secondary" onclick="openTryon('${sid}')">🤖 Virtual Try-On</button>
                 ${ownerActions}
             </div>
             ${renderReviewSection(item)}
@@ -1568,10 +1638,10 @@ function openItem(id) {
 // ── CART ──
 function addToCart(id) {
     if (!currentUser) { alert('Please sign in to add items.'); openAuthModal(); return; }
-    const item = items.find(i=>i.id===id); if (!item) return;
-    if (item.seller===currentUser) { alert("You can't buy your own listing."); return; }
-    if (cart.find(c=>c.id===id)) { alert('Already in cart!'); return; }
-    cart.push({...item}); save('ss_cart', cart); updateCartBadge();
+    const item = items.find(i => String(i.id) === String(id)); if (!item) return;
+    if (item.seller === currentUser) { alert("You can't buy your own listing."); return; }
+    if (cart.find(c => String(c.id) === String(id))) { alert('Already in cart!'); return; }
+    cart.push({...item}); save(cartKey(), cart); updateCartBadge();
     alert(`✓ "${item.title}" added to cart`);
 }
 function removeFromCart(id) { cart=cart.filter(c=>c.id!==id); save('ss_cart',cart); updateCartBadge(); renderCart(); }
@@ -1579,15 +1649,16 @@ function updateCartBadge() { const b=document.getElementById('cartBadge'); if(ca
 function updateFavUI() {
     const cards = document.querySelectorAll('.favorite-btn');
     cards.forEach(btn => {
-        const id = Number(btn.getAttribute('data-item-id'));
-        if (!Number.isNaN(id)) btn.textContent = favorites.includes(id)?'❤️':'🤍';
+        const id = btn.getAttribute('data-item-id');
+        if (id !== null) btn.textContent = favorites.some(f => String(f) === String(id)) ? '❤️' : '🤍';
     });
 }
 function toggleFavorite(id) {
     if (!currentUser) { alert('Sign in to save favourites.'); openAuthModal(); return; }
-    const idx = favorites.indexOf(id);
-    if (idx === -1) favorites.push(id);
-    else favorites.splice(idx,1);
+    const sid = String(id);
+    const idx = favorites.findIndex(f => String(f) === sid);
+    if (idx === -1) favorites.push(sid);
+    else favorites.splice(idx, 1);
     save('ss_favs', favorites); displayItems(filteredItems); updateFavUI();
 }
 function showCart() { showTab('cart'); }
@@ -1660,7 +1731,7 @@ function completeOrder() {
     const itemStatuses = {};
     cart.forEach(item => {
         itemStatuses[item.id] = 'Pending';
-        const original = items.find(i=>i.id===item.id);
+        const original = items.find(i => String(i.id) === String(item.id));
         if (original) {
             original.reserved = true;
             original.reservedBy = currentUser;
@@ -1668,7 +1739,7 @@ function completeOrder() {
     });
     const order = { id:'ORD-'+Date.now(), user:currentUser, items:[...cart], itemStatuses, total:cart.reduce((s,i)=>s+i.price,0), status:'Processing', date:new Date().toISOString() };
     orders.push(order); save('ss_orders', orders); save('ss_items', items);
-    cart = []; save('ss_cart', cart); updateCartBadge();
+    cart = []; save(cartKey(), cart); updateCartBadge();
     closeOverlay('checkoutOverlay');
     alert(`🎉 Order placed! ID: ${order.id}`);
     showTab('browse');
@@ -1745,19 +1816,19 @@ function renderSellerOrderCard(order, myItemIds) {
                         <div style="font-size:12px;color:var(--warm-gray);margin-bottom:8px;">${item.brand} · Size ${item.size} · €${Math.round(item.price)}</div>
                         <div class="order-actions">
                             ${status==='Pending'?`
-                                <button class="btn btn-success" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}',${item.id},'Accepted')">✓ Accept</button>
-                                <button class="btn btn-danger" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}',${item.id},'Refused')">✕ Refuse</button>
+                                <button class="btn btn-success" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}','${item.id}','Accepted')">✓ Accept</button>
+                                <button class="btn btn-danger" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}','${item.id}','Refused')">✕ Refuse</button>
                             `:status==='Accepted'?`
-                                <button class="btn btn-forest" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}',${item.id},'Shipped')">📦 Mark Shipped</button>
+                                <button class="btn btn-forest" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}','${item.id}','Shipped')">📦 Mark Shipped</button>
                                 <span class="order-status-badge status-accepted">Accepted</span>
                             `:status==='Shipped'?`
-                                <button class="btn btn-forest" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}',${item.id},'Delivered')">✅ Mark Delivered</button>
+                                <button class="btn btn-forest" style="font-size:12px;padding:6px 14px;" onclick="updateItemOrderStatus('${order.id}','${item.id}','Delivered')">✅ Mark Delivered</button>
                                 <span class="order-status-badge status-shipped">Shipped</span>
                             `:status==='Delivered'?`
                                 <span class="order-status-badge status-delivered">✅ Delivered</span>
                             `:status==='Refused'?`
                                 <span class="order-status-badge status-refused">Refused</span>
-                                <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="updateItemOrderStatus('${order.id}',${item.id},'Pending')">Undo</button>
+                                <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="updateItemOrderStatus('${order.id}','${item.id}','Pending')">Undo</button>
                             `:''}
                         </div>
                     </div>
@@ -1767,11 +1838,11 @@ function renderSellerOrderCard(order, myItemIds) {
 }
 
 function updateItemOrderStatus(orderId, itemId, newStatus) {
-    const order = orders.find(o => o.id===orderId);
+    const order = orders.find(o => String(o.id) === String(orderId));
     if (!order) return;
     if (!order.itemStatuses) order.itemStatuses = {};
     order.itemStatuses[itemId] = newStatus;
-    const item = items.find(i => i.id===itemId);
+    const item = items.find(i => String(i.id) === String(itemId));
     if (item) {
         if (newStatus==='Shipped' || newStatus==='Delivered') {
             item.sold = true;
@@ -1835,20 +1906,21 @@ function makeMyListingCard(item) {
     const card = document.createElement('div');
     card.className = 'item-card';
     const img = getItemImg(item);
+    const msid = String(item.id);
     card.innerHTML = `
-        <div class="item-img-wrap" onclick="openItem(${item.id})">
+        <div class="item-img-wrap" onclick="openItem('${msid}')">
             <img src="${img}" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
             <div class="condition-tag">${item.condition}</div>
         </div>
-        <div class="item-body">
+        <div class="item-body" onclick="openItem('${msid}')" style="cursor:pointer;">
             <div class="item-brand">${item.brand}</div>
             <div class="item-title">${item.title}</div>
             <div class="item-meta">Size ${item.size} · ${item.gender}</div>
             <div class="item-footer">
                 <div class="item-price">€${Math.round(item.price)}</div>
                 <div style="display:flex;gap:8px;">
-                    <button class="btn btn-ghost" style="font-size:12px;padding:8px 10px;" onclick="event.stopPropagation(); openEditItem(${item.id})">Edit</button>
-                    <button class="btn btn-danger" style="font-size:12px;padding:8px 10px;" onclick="event.stopPropagation(); deleteItem(${item.id})">Delete</button>
+                    <button class="btn btn-ghost" style="font-size:12px;padding:8px 10px;" onclick="event.stopPropagation(); openEditItem('${msid}')">Edit</button>
+                    <button class="btn btn-danger" style="font-size:12px;padding:8px 10px;" onclick="event.stopPropagation(); deleteItem('${msid}')">Delete</button>
                 </div>
             </div>
         </div>`;
@@ -1953,7 +2025,13 @@ function buildAISuggestions() {
         <div class="ai-suggestion-item"><strong>📝 Description:</strong> Include material, measurements, and any flaws</div>`;
     document.getElementById('aiBox').classList.add('show');
 }
-function submitItem() {
+async function dataUrlToFile(dataUrl, filename) {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
+}
+
+async function submitItem() {
     if (!currentUser) { alert('Please sign in.'); openAuthModal(); return; }
     const title = document.getElementById('itemTitle').value.trim();
     const brand = document.getElementById('itemBrand').value.trim();
@@ -1964,49 +2042,90 @@ function submitItem() {
     const gender= document.getElementById('itemGender').value;
     const desc  = document.getElementById('itemDesc').value.trim();
     if (!title||!cat||!sz||!cond||isNaN(price)||price<0) { alert('Please fill in all required fields.'); return; }
-    const baseItem = {
-        title,
-        brand:brand||'No Brand',
-        category:cat,
-        size:sz,
-        condition:cond,
-        price:Math.max(0,price),
-        gender,
-        description:desc,
-        image:uploadedDataUrls[0]||'',
-        aiScore:Math.floor(Math.random()*20)+75,
-        tags:[cat,cond],
-        color:'unknown',
-        dateAdded:new Date().toISOString()
-    };
-    if (editingItemId) {
-        const item = items.find(i=>i.id===editingItemId);
-        if (item) {
-            Object.assign(item, baseItem);
-            if (uploadedDataUrls[0]) item.image = uploadedDataUrls[0];
-            save('ss_items', items);
-            alert('✅ Listing updated!');
+
+    const btn = document.getElementById('listBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing...'; }
+
+    const catMap = { shirt:'clothing', pants:'clothing', dress:'clothing', jacket:'clothing', shoes:'shoes', accessories:'accessories' };
+    const backendCat = catMap[cat] || 'other';
+
+    try {
+        if (editingItemId) {
+            const item = items.find(i => String(i.id) === String(editingItemId));
+            if (item) {
+                Object.assign(item, { title, brand:brand||'No Brand', category:cat, size:sz, condition:cond, price:Math.max(0,price), gender, description:desc });
+                if (uploadedDataUrls[0]) item.image = uploadedDataUrls[0];
+                save('ss_items', items);
+                alert('✅ Listing updated!');
+            }
+            editingItemId = null;
+        } else {
+            const productData = {
+                title,
+                description: desc || title,
+                price: Math.max(0, price),
+                category: backendCat,
+                brand: brand || 'No Brand',
+                condition: cond,
+                size: JSON.stringify([sz]),
+                color: JSON.stringify(['unknown']),
+                stock: 1
+            };
+            const response = await api.createProduct(productData);
+            if (!response.success || !response.data) throw new Error(response.message || 'Server error');
+            const newProduct = response.data;
+
+            const localItem = {
+                id: newProduct._id,
+                title: newProduct.title,
+                brand: brand || 'No Brand',
+                category: cat,
+                size: sz,
+                condition: cond,
+                price: newProduct.price,
+                gender,
+                description: desc,
+                seller: currentUser,
+                images: uploadedDataUrls.slice(0, 5),
+                image: uploadedDataUrls[0] || '',
+                aiScore: Math.floor(Math.random()*20)+75,
+                tags: [cat, cond],
+                color: 'unknown',
+                dateAdded: new Date().toISOString()
+            };
+            items.unshift(localItem);
+
+            if (uploadedDataUrls.length > 0) {
+                try {
+                    const files = await Promise.all(uploadedDataUrls.map((u, i) => dataUrlToFile(u, `photo_${i}.jpg`)));
+                    const imgResp = await api.uploadProductImages(newProduct._id, files);
+                    if (imgResp && imgResp.data && imgResp.data.images) {
+                        const cloudUrls = imgResp.data.images.map(img => img && typeof img === 'object' ? img.url : img).filter(Boolean);
+                        if (cloudUrls.length) { localItem.images = cloudUrls; localItem.image = cloudUrls[0]; }
+                    }
+                } catch (imgErr) { console.warn('Image upload failed, keeping local previews:', imgErr); }
+            }
+            alert('✅ Item listed successfully!');
         }
-        editingItemId = null;
-    } else {
-        const newItem = { id:Date.now(), ...baseItem, seller:currentUser };
-        items.unshift(newItem);
-        save('ss_items', items);
-        alert('✅ Item listed!');
+
+        filteredItems = [...items];
+        ['itemTitle','itemBrand','itemPrice','origPrice','itemDesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        ['itemCategory','itemSize','itemCondition'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        document.getElementById('imgPreviews').innerHTML='';
+        uploadedDataUrls=[]; document.getElementById('aiBox').classList.remove('show');
+        updateAuthUI();
+        showTab('browse');
+    } catch (error) {
+        const msg = error.message || '';
+        alert('❌ Could not publish listing: ' + (msg || 'Make sure you are signed in and the server is running.'));
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Publish Listing'; }
     }
-    const btn = document.getElementById('listBtn'); if (btn) btn.textContent = '📤 Publish Listing';
-    filteredItems=[...items];
-    ['itemTitle','itemBrand','itemPrice','origPrice','itemDesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    ['itemCategory','itemSize','itemCondition'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    document.getElementById('imgPreviews').innerHTML='';
-    uploadedDataUrls=[]; document.getElementById('aiBox').classList.remove('show');
-    updateAuthUI();
-    showTab('browse');
 }
 
 // ── MESSAGES ──
 function openEditItem(itemId) {
-    const item = items.find(i=>i.id===itemId);
+    const item = items.find(i => String(i.id) === String(itemId));
     if (!item) return;
     editingItemId = itemId;
     showTab('sell');
@@ -2028,18 +2147,18 @@ function openEditItem(itemId) {
 
 function deleteItem(itemId) {
     if (!confirm('Delete this listing? This cannot be undone.')) return;
-    items = items.filter(i=>i.id!==itemId);
+    items = items.filter(i => String(i.id) !== String(itemId));
     save('ss_items', items);
     filteredItems = [...items];
     renderMyListings();
     displayItems(filteredItems);
     updateStats();
-    if (editingItemId===itemId) editingItemId = null;
+    if (String(editingItemId) === String(itemId)) editingItemId = null;
 }
 
 function openMsg(itemId) {
     if (!currentUser) { alert('Please sign in.'); openAuthModal(); return; }
-    const item = items.find(i=>i.id===itemId);
+    const item = items.find(i => String(i.id) === String(itemId));
     if (!item) return;
     if (item.seller===currentUser) { alert("You can't message yourself."); return; }
     currentChatTarget = {toUser:item.seller, itemId, itemTitle:item.title};
@@ -2084,7 +2203,7 @@ function renderChats() {
         if (m.from!==currentUser&&m.to!==currentUser) return;
         const other = m.from===currentUser?m.to:m.from;
         const key = other+'::'+(m.itemId||'');
-        if (!seen[key]||new Date(seen[key].ts)<new Date(m.ts)) seen[key]={...m,other,itemTitle:m.itemId?items.find(i=>i.id===m.itemId)?.title||'':'',unread:0};
+        if (!seen[key]||new Date(seen[key].ts)<new Date(m.ts)) seen[key]={...m,other,itemTitle:m.itemId?items.find(i=>String(i.id)===String(m.itemId))?.title||'':'',unread:0};
     });
     messages.forEach(m=>{ if(m.to===currentUser&&!m.read){const key=(m.from)+'::'+(m.itemId||'');if(seen[key])seen[key].unread++;} });
     const chats = Object.values(seen).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,10);
@@ -2097,7 +2216,7 @@ function renderChats() {
             ${c.unread?`<span style="background:var(--terracotta);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${c.unread}</span>`:''}
         </div>`).join('');
 }
-function openChatFrom(user, itemId) { toggleChatsPanel(); currentChatTarget={toUser:user,itemId,itemTitle:itemId?items.find(i=>i.id===itemId)?.title||'':null}; renderMsgModal(); }
+function openChatFrom(user, itemId) { toggleChatsPanel(); currentChatTarget={toUser:user,itemId,itemTitle:itemId?items.find(i=>String(i.id)===String(itemId))?.title||'':null}; renderMsgModal(); }
 
 // ── USER SEARCH ──
 function handleUserSearch() {
@@ -2116,21 +2235,113 @@ function handleUserSearch() {
     r.classList.add('show');
     document.addEventListener('click', e=>{ if(!e.target.closest('.user-search-wrap'))r.classList.remove('show'); },{once:true});
 }
+function switchAccTab(tab) {
+    ['info','listings','saved'].forEach(t => {
+        const btn = document.getElementById('accTab_'+t);
+        const pane = document.getElementById('accPane_'+t);
+        if (btn) btn.style.fontWeight = t===tab ? '700' : '400';
+        if (btn) btn.style.borderBottom = t===tab ? '2px solid var(--terracotta)' : '2px solid transparent';
+        if (pane) pane.style.display = t===tab ? 'block' : 'none';
+    });
+}
+
+async function changePassword() {
+    const oldPass = document.getElementById('accOldPass').value;
+    const newPass = document.getElementById('accNewPass').value;
+    const newPass2 = document.getElementById('accNewPass2').value;
+    if (!oldPass||!newPass||!newPass2) { alert('Completează toate câmpurile.'); return; }
+    if (newPass !== newPass2) { alert('Parolele noi nu coincid.'); return; }
+    if (newPass.length < 6) { alert('Parola trebuie să aibă minim 6 caractere.'); return; }
+    const btn = document.getElementById('changePassBtn');
+    if (btn) { btn.disabled=true; btn.textContent='Se salvează...'; }
+    try {
+        const resp = await fetch('http://localhost:5000/api/users/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+localStorage.getItem('accessToken') },
+            body: JSON.stringify({ currentPassword: oldPass, newPassword: newPass })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            alert('✅ Parola a fost schimbată cu succes!');
+            ['accOldPass','accNewPass','accNewPass2'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        } else {
+            alert('❌ ' + (data.message || 'Eroare necunoscută'));
+        }
+    } catch(e) { alert('❌ Eroare: ' + e.message); }
+    finally { if (btn) { btn.disabled=false; btn.textContent='Schimbă Parola'; } }
+}
+
+function makeSmallCard(item) {
+    const img = getItemImg(item);
+    const sid = String(item.id);
+    return `<div class="item-card" onclick="closeOverlay('profileOverlay');openItem('${sid}')">
+        <div class="item-img-wrap"><img src="${img}" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'">
+        <div class="condition-tag">${item.condition||''}</div></div>
+        <div class="item-body"><div class="item-brand">${item.brand}</div><div class="item-title">${item.title}</div>
+        <div class="item-footer"><div class="item-price">€${Math.round(item.price)}</div></div></div></div>`;
+}
+
 function showProfile(username) {
     document.getElementById('userResults').classList.remove('show');
     document.getElementById('userSearchInput').value='';
-    const userItems = items.filter(i=>i.seller===username);
-    document.getElementById('profileContent').innerHTML=`
-        <div class="profile-banner"></div>
-        <div class="profile-avatar">${username.charAt(0).toUpperCase()}</div>
-        <div class="profile-body">
-            <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-bottom:4px;">${username}</h2>
-            <p style="color:var(--warm-gray);font-size:13px;margin-bottom:20px;">${userItems.length} items listed</p>
-            ${currentUser&&currentUser!==username?`<button class="btn btn-outline" style="margin-bottom:24px;" onclick="openUserMsg('${username}')">💬 Message ${username}</button>`:''}
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:16px;">Listings</div>
-            <div class="items-grid">${userItems.map(item=>{const img=getItemImg(item);return`<div class="item-card" onclick="closeOverlay('profileOverlay');openItem(${item.id})"><div class="item-img-wrap"><img src="${img}" alt="${item.title}" onerror="this.src='${catImg(item.category,item.id)}'"></div><div class="item-body"><div class="item-brand">${item.brand}</div><div class="item-title">${item.title}</div><div class="item-footer"><div class="item-price">€${Math.round(item.price)}</div></div></div></div>`;}).join('')||'<div class="empty-state"><div class="empty-icon">📭</div><h3>No items</h3></div>'}
-            </div>
-        </div>`;
+    const isOwn = currentUser && (username === currentUser || username === currentUserId);
+
+    if (isOwn) {
+        // ── MY ACCOUNT VIEW ──
+        const myItems = items.filter(i => String(i.seller)===String(currentUser)||String(i.seller)===String(currentUserId));
+        const favItems = items.filter(i => favorites.some(f => String(f)===String(i.id)));
+        const initial = currentUser.charAt(0).toUpperCase();
+        const tabStyle = 'padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;color:var(--charcoal);';
+        document.getElementById('profileContent').innerHTML = `
+            <div class="profile-banner"></div>
+            <div class="profile-avatar">${initial}</div>
+            <div class="profile-body">
+                <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-bottom:2px;">My Account</h2>
+                <p style="color:var(--warm-gray);font-size:13px;margin-bottom:16px;">${currentUser}</p>
+                <div style="display:flex;gap:0;border-bottom:1px solid var(--cream-deep);margin-bottom:20px;">
+                    <button id="accTab_info" style="${tabStyle}font-weight:700;border-bottom:2px solid var(--terracotta);" onclick="switchAccTab('info')">Profile</button>
+                    <button id="accTab_listings" style="${tabStyle}" onclick="switchAccTab('listings')">My Listings (${myItems.length})</button>
+                    <button id="accTab_saved" style="${tabStyle}" onclick="switchAccTab('saved')">Saved (${favItems.length})</button>
+                </div>
+
+                <div id="accPane_info">
+                    <div style="background:var(--cream);border-radius:var(--radius-md);padding:16px;margin-bottom:20px;">
+                        <div style="font-size:13px;color:var(--warm-gray);margin-bottom:4px;">Email / Username</div>
+                        <div style="font-size:15px;font-weight:600;">${currentUser}</div>
+                    </div>
+                    <div style="border-top:1px solid var(--cream-deep);padding-top:20px;">
+                        <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;margin-bottom:16px;">Schimbă Parola</h3>
+                        <div style="display:flex;flex-direction:column;gap:10px;max-width:360px;">
+                            <input type="password" id="accOldPass" class="form-input" placeholder="Parola curentă">
+                            <input type="password" id="accNewPass" class="form-input" placeholder="Parola nouă (minim 6 caractere)">
+                            <input type="password" id="accNewPass2" class="form-input" placeholder="Confirmă parola nouă">
+                            <button id="changePassBtn" class="btn btn-primary" style="margin-top:4px;" onclick="changePassword()">Schimbă Parola</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="accPane_listings" style="display:none">
+                    <div class="items-grid">${myItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">📭</div><h3>No listings yet</h3><p>Go to Sell to add your first item</p></div>'}</div>
+                </div>
+
+                <div id="accPane_saved" style="display:none">
+                    <div class="items-grid">${favItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">❤️</div><h3>No saved items yet</h3><p>Tap the heart on any item to save it</p></div>'}</div>
+                </div>
+            </div>`;
+    } else {
+        // ── PUBLIC PROFILE VIEW ──
+        const userItems = items.filter(i => i.seller===username || i.seller===username);
+        document.getElementById('profileContent').innerHTML = `
+            <div class="profile-banner"></div>
+            <div class="profile-avatar">${username.charAt(0).toUpperCase()}</div>
+            <div class="profile-body">
+                <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;margin-bottom:4px;">${username}</h2>
+                <p style="color:var(--warm-gray);font-size:13px;margin-bottom:20px;">${userItems.length} items listed</p>
+                ${currentUser&&currentUser!==username?`<button class="btn btn-outline" style="margin-bottom:24px;" onclick="openUserMsg('${username}')">💬 Message ${username}</button>`:''}
+                <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:16px;">Listings</div>
+                <div class="items-grid">${userItems.map(makeSmallCard).join('')||'<div class="empty-state"><div class="empty-icon">📭</div><h3>No items</h3></div>'}</div>
+            </div>`;
+    }
     openOverlay('profileOverlay');
 }
 function openUserMsg(username) { closeOverlay('profileOverlay'); currentChatTarget={toUser:username,itemId:null,itemTitle:null}; renderMsgModal(); }
@@ -2138,7 +2349,7 @@ function openUserMsg(username) { closeOverlay('profileOverlay'); currentChatTarg
 // ── VIRTUAL TRY-ON ──
 function openTryon(itemId) {
     if (!currentUser) { alert('Please sign in.'); openAuthModal(); return; }
-    const item = items.find(i=>i.id===itemId); if (!item) return;
+    const item = items.find(i => String(i.id) === String(itemId)); if (!item) return;
     currentTryonItem = item;
     document.getElementById('tryonTitle').textContent = item.title;
     document.getElementById('tryonGarmentImg').src = getItemImg(item);
@@ -2151,42 +2362,63 @@ async function processTryOn() {
     const inp = document.getElementById('tryonInput');
     if (!inp.files||!inp.files.length) return;
     const file = inp.files[0];
+    inp.value = ''; // reset so same file can be re-selected next time
     if (file.size > 8*1024*1024) { alert('Max file size is 8MB.'); return; }
     const panel = document.getElementById('tryonResultPanel');
-    panel.innerHTML = `<div class="tryon-loading"><div class="spinner"></div><div style="font-size:13px;font-weight:500;">AI is processing your try-on…</div><div style="font-size:11px;color:var(--warm-gray);margin-top:4px;">This may take 15–30 seconds</div></div>`;
+    panel.innerHTML = `<div class="tryon-loading"><div class="spinner"></div><div style="font-size:13px;font-weight:500;">AI analizează stilul tău…</div><div style="font-size:11px;color:var(--warm-gray);margin-top:4px;">Poate dura 10–20 secunde</div></div>`;
 
     const userImgB64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); });
-    const replicateKey = localStorage.getItem('ss_replicate_key');
+    const userPhotoUrl = 'data:'+file.type+';base64,'+userImgB64;
+    const item = currentTryonItem;
 
-    // Try Replicate first if key is present
-    if (replicateKey) {
-        try {
-            const garmentUrl = document.getElementById('tryonGarmentImg').src;
-            const result = await callReplicateVTON(replicateKey, garmentUrl, currentTryonItem);
-            if (result) {
-                panel.innerHTML = `<img src="${result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Try-On Result"><div class="tryon-label">AI Result ✦</div>`;
-                return;
-            }
-        } catch(e) {
-            console.warn('Replicate failed, falling back to Claude:', e.message);
-        }
-    }
-
-    // Claude AI fallback — generates a rich visual preview
+    let resp, data;
     try {
-        const result = await callClaudeVTON(userImgB64, currentTryonItem);
-        if (result) { panel.innerHTML = `<img src="${result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Try-On Preview"><div class="tryon-label">AI Preview</div>`; }
-        else throw new Error('No result');
-    } catch(e) {
-        const userUrl = 'data:image/jpeg;base64,'+userImgB64;
-        panel.innerHTML = `
-            <img src="${userUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
-            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(44,74,62,0.85));padding:14px;border-radius:0 0 8px 8px;">
-                <div style="color:white;font-size:12px;font-weight:600;margin-bottom:2px;">${currentTryonItem.title}</div>
-                <div style="color:rgba(255,255,255,0.75);font-size:11px;">Add a Replicate key in ⚙️ Settings for AI overlay</div>
-            </div>
-            <div class="tryon-label">Preview</div>`;
+        resp = await fetch('http://localhost:5000/api/ai/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userImageBase64: userImgB64,
+                mediaType: file.type || 'image/jpeg',
+                itemTitle: item.title,
+                itemBrand: item.brand,
+                itemCategory: item.category,
+                itemColor: Array.isArray(item.color) ? item.color.join(', ') : (item.color || ''),
+                itemCondition: item.condition,
+                itemSize: Array.isArray(item.size) ? item.size.join(', ') : (item.size || '')
+            })
+        });
+        data = await resp.json();
+    } catch(netErr) {
+        panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">⚠️</div><p style="font-size:13px;">Nu pot contacta serverul. Asigură-te că backend-ul rulează.</p></div>`;
+        return;
     }
+
+    if (!resp.ok) {
+        if (resp.status === 401) {
+            panel.innerHTML = `<div class="tryon-placeholder"><div class="icon">🔒</div><p style="font-size:13px;">Nu ești autentificat. Te rog să te loghezi și să încerci din nou.</p></div>`;
+        } else {
+            panel.innerHTML = `
+                <img src="${userPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(44,74,62,0.85));padding:14px;border-radius:0 0 8px 8px;">
+                    <div style="color:white;font-size:12px;font-weight:600;margin-bottom:2px;">${item.title}</div>
+                    <div style="color:rgba(255,255,255,0.75);font-size:11px;">Eroare AI (${resp.status}): ${data.message || 'Încearcă din nou.'}</div>
+                </div><div class="tryon-label">Preview</div>`;
+        }
+        return;
+    }
+
+    const ai = data.data || {};
+    const score = Math.min(10, Math.max(1, Math.round(ai.styleScore || 8)));
+    const stars = '★'.repeat(Math.min(5,score)) + '☆'.repeat(Math.max(0,5-score));
+    panel.innerHTML = `
+        <img src="${userPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="Your photo">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(20,30,20,0.92));padding:16px 14px 14px;border-radius:0 0 8px 8px;">
+            <div style="color:#f5c97a;font-size:13px;font-weight:700;margin-bottom:4px;">${item.title} · ${stars}</div>
+            <div style="color:rgba(255,255,255,0.92);font-size:12px;line-height:1.5;margin-bottom:6px;">${ai.description || ''}</div>
+            ${ai.tip ? `<div style="color:#a8d5b5;font-size:11px;margin-bottom:2px;">💡 ${ai.tip}</div>` : ''}
+            ${ai.colorMatch ? `<div style="color:#c8e6d4;font-size:11px;">🎨 ${ai.colorMatch}</div>` : ''}
+        </div>
+        <div class="tryon-label">AI Style ✦</div>`;
 }
 
 async function callReplicateVTON(apiKey, garmentUrl, item) {
@@ -2213,6 +2445,43 @@ async function callReplicateVTON(apiKey, garmentUrl, item) {
     }
     if (result.status==='failed') throw new Error('Replicate prediction failed');
     return result.output;
+}
+
+function renderReviewSection(item) {
+    const reviews = item.reviews || [];
+    if (!reviews.length) {
+        return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-deep);">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:8px;">Reviews</div>
+            <div style="font-size:13px;color:var(--warm-gray);">No reviews yet.</div>
+        </div>`;
+    }
+    const stars = n => '★'.repeat(Math.min(5, Math.round(n))) + '☆'.repeat(Math.max(0, 5 - Math.round(n)));
+    return `<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-deep);">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;margin-bottom:12px;">Reviews</div>
+        ${reviews.map(r => `<div style="background:var(--cream);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-size:13px;font-weight:600;">${r.user || r.reviewer || 'User'}</span>
+                <span style="color:var(--terracotta);font-size:13px;">${stars(r.rating || 5)}</span>
+            </div>
+            <div style="font-size:13px;color:var(--warm-gray);">${r.comment || r.text || ''}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function openHelpCenter() {
+    alert('💡 Help Center\n\n• Browse items and use filters to find what you\'re looking for\n• Sign in or create an account to buy, sell, or save favourites\n• Tap the ❤️ heart on any item to save it to your Saved list\n• Use 🤖 Virtual Try-On on any listing to preview the garment\n• Contact sellers directly via the Message button on listings\n• Manage your listings and orders from the Seller Hub\n\nFor support: support@secondstyle.com');
+}
+
+function renderFavorites() {
+    const grid = document.getElementById('favoritesGrid');
+    if (!grid) return;
+    const favItems = items.filter(i => favorites.some(f => String(f) === String(i.id)));
+    if (!favItems.length) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-icon">❤️</div><h3>No saved items yet</h3><p>Tap the heart on any item to save it here</p></div>';
+        return;
+    }
+    grid.innerHTML = '';
+    favItems.forEach(item => grid.appendChild(makeCard(item)));
 }
 
 async function callClaudeVTON(userImgB64, item) {

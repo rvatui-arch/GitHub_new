@@ -4,7 +4,7 @@
  */
 
 class APIService {
-  constructor(baseURL = 'http://localhost:8000/api') {
+  constructor(baseURL = 'http://localhost:5000/api') {
     this.baseURL = baseURL;
     this.accessToken = localStorage.getItem('accessToken');
     this.refreshToken = localStorage.getItem('refreshToken');
@@ -44,13 +44,6 @@ class APIService {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle token expiration
-        if (response.status === 401) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.location.href = '/';
-        }
         throw new Error(data.message || `API Error: ${response.status}`);
       }
 
@@ -76,10 +69,10 @@ class APIService {
       body: JSON.stringify({ email, password })
     });
 
-    if (response.success && response.accessToken) {
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+    if (response.success && response.data && response.data.accessToken) {
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
 
     return response;
@@ -376,4 +369,4 @@ class APIService {
 }
 
 // Export singleton instance
-const api = new APIService('http://localhost:8000/api');
+const api = new APIService('http://localhost:5000/api');

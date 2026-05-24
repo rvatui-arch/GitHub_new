@@ -264,3 +264,35 @@ exports.removeFromWishlist = async (req, res) => {
     return sendError(res, 500, 'Failed to remove from wishlist');
   }
 };
+
+/**
+ * Change Password
+ * POST /api/users/change-password
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return sendError(res, 400, 'Both current and new password are required');
+    }
+    if (newPassword.length < 6) {
+      return sendError(res, 400, 'New password must be at least 6 characters');
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return sendError(res, 401, 'Current password is incorrect');
+    }
+
+    user.password = newPassword;
+    await user.save(); // pre-save hook hashes it
+
+    logger.info(`Password changed for user: ${user.email}`);
+    return sendSuccess(res, 200, 'Password changed successfully');
+  } catch (error) {
+    logger.error('Change password error:', error);
+    return sendError(res, 500, 'Failed to change password');
+  }
+};

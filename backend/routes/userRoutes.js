@@ -13,6 +13,7 @@ router.get('/profile', authenticateToken, userController.getProfile);
 router.put('/profile', authenticateToken, userController.updateProfile);
 router.post('/avatar', authenticateToken, upload.single('avatar'), userController.uploadAvatar);
 router.get('/orders', authenticateToken, userController.getMyOrders);
+router.post('/change-password', authenticateToken, userController.changePassword);
 router.post('/wishlist/:productId', authenticateToken, userController.addToWishlist);
 router.delete('/wishlist/:productId', authenticateToken, userController.removeFromWishlist);
 

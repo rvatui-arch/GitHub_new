@@ -18,6 +18,9 @@ router.post(
   aiController.processVirtualTryOn
 );
 
+// Style analysis — no auth required, anyone can use try-on
+router.post('/analyze', aiController.analyzeTryOn);
+
 router.get('/try-on-history', authenticateToken, aiController.getTryOnHistory);
 
 module.exports = router;

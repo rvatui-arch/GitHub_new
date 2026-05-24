@@ -13,34 +13,10 @@ router.get('/', productController.getAllProducts);
 router.get('/:productId', productController.getProductById);
 router.get('/seller/:sellerId', productController.getSellerProducts);
 
-// Protected routes - Seller only
-router.post(
-  '/',
-  authenticateToken,
-  isSeller,
-  productController.createProduct
-);
-
-router.put(
-  '/:productId',
-  authenticateToken,
-  isSeller,
-  productController.updateProduct
-);
-
-router.post(
-  '/:productId/images',
-  authenticateToken,
-  isSeller,
-  upload.array('images', 5),
-  productController.uploadProductImages
-);
-
-router.delete(
-  '/:productId',
-  authenticateToken,
-  isSeller,
-  productController.deleteProduct
-);
+// Protected routes - any authenticated user can sell
+router.post('/', authenticateToken, productController.createProduct);
+router.put('/:productId', authenticateToken, productController.updateProduct);
+router.post('/:productId/images', authenticateToken, upload.array('images', 5), productController.uploadProductImages);
+router.delete('/:productId', authenticateToken, productController.deleteProduct);
 
 module.exports = router;

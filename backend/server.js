@@ -50,12 +50,10 @@ app.use(helmet());
 app.use(mongoSanitize());
 
 // CORS configuration
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:5500', 'http://127.0.0.1:8080', 'http://localhost:5500'],
+  credentials: true
+}));
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));

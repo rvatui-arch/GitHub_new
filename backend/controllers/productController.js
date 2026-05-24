@@ -14,21 +14,30 @@ const logger = require('../utils/logger');
  */
 exports.createProduct = async (req, res) => {
   try {
-    const { title, description, price, category, stock, size, color } = req.body;
+    const { title, description, price, category, stock, size, color, brand, condition, gender, originalPrice } = req.body;
 
-    if (!title || !description || !price || !category || !stock) {
+    if (!title || !description || !price || !category) {
       return sendError(res, 400, 'Missing required fields');
     }
+
+    const parseSafe = (val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      try { return JSON.parse(val); } catch { return [val]; }
+    };
 
     const product = await Product.create({
       title,
       description,
       price,
       category,
-      stock,
-      size: size ? JSON.parse(size) : [],
-      color: color ? JSON.parse(color) : [],
+      stock: stock || 1,
+      size: parseSafe(size),
+      color: parseSafe(color),
+      brand,
+      condition,
       seller: req.user._id,
+      status: 'active',
     });
 
     logger.info(`Product created: ${product._id}`);

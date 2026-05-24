@@ -60,6 +60,30 @@ exports.processVirtualTryOn = async (req, res) => {
 };
 
 /**
+ * Analyze style fit — accepts base64 image + item metadata
+ * POST /api/ai/analyze
+ */
+exports.analyzeTryOn = async (req, res) => {
+  try {
+    const { userImageBase64, mediaType, itemTitle, itemBrand, itemCategory, itemColor, itemCondition, itemSize } = req.body;
+
+    if (!userImageBase64) return sendError(res, 400, 'User image is required');
+
+    const result = await aiService.analyzeStyleFit(
+      userImageBase64,
+      mediaType || 'image/jpeg',
+      { title: itemTitle || 'item', brand: itemBrand, category: itemCategory, color: itemColor, condition: itemCondition, size: itemSize }
+    );
+
+    logger.info(`Style analysis done for user ${req.user._id}`);
+    return sendSuccess(res, 200, 'Analysis complete', result);
+  } catch (error) {
+    logger.error('Style analysis error:', error);
+    return sendError(res, 500, error.message || 'Failed to analyze style');
+  }
+};
+
+/**
  * Get Try-On History
  * GET /api/ai/try-on-history
  */
